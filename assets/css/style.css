@@ -1,0 +1,50 @@
+/* Main Styles */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main.container {
+    flex: 1;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+}
+
+.card.shadow-sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.navbar-brand {
+    font-size: 1.25rem;
+}
+
+.btn-dark {
+    background-color: #212529;
+    border-color: #212529;
+}
+
+.btn-dark:hover {
+    background-color: #1a1d21;
+    border-color: #1a1d21;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    font-weight: 600;
+}
+
+.alert ul {
+    padding-left: 1.25rem;
+}
+
+footer {
+    margin-top: auto;
+}

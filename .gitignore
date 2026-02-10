@@ -1,0 +1,31 @@
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Claude
+.claude/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Uploads (user-generated content)
+uploads/*
+!uploads/.gitkeep
+
+# Database credentials
+config/database.php
+
+# PHP
+*.log
+*.cache
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+~$*
+tmpclaude-*
