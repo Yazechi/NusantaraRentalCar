@@ -16,8 +16,6 @@ Desktop.ini
 uploads/*
 !uploads/.gitkeep
 
-# Database credentials
-config/database.php
 
 # PHP
 *.log
