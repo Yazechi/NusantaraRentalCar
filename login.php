@@ -2,7 +2,8 @@
 $page_title = 'Login';
 require_once __DIR__ . '/includes/header.php';
 
-if (is_logged_in()) {
+// If already logged in, redirect to home (unless explicitly trying to switch accounts)
+if (is_logged_in() && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(SITE_URL . '/');
 }
 
@@ -27,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
+            // Clear any existing session data before new login
+            $_SESSION = array();
+            session_regenerate_id(true);
+            
             $result = login_user($email, $password);
             if ($result['success']) {
                 if ($result['role'] === 'admin') {
@@ -73,14 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-dark"><i class="fas fa-sign-in-alt"></i> Login</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
                     </div>
                 </form>
 
-                <hr>
-                <p class="text-center mb-0">
-                    Don't have an account? <a href="<?php echo SITE_URL; ?>/register.php">Register here</a>
-                </p>
+                        <hr>
+                        <p class="text-center mb-0">
+                            Don't have an account? <a href="<?php echo SITE_URL; ?>/register.php">Register here</a><br>
+                            <small><a href="<?php echo SITE_URL; ?>/forgot-password.php" class="text-muted">Forgot Password?</a></small>
+                        </p>
             </div>
         </div>
     </div>

@@ -13,8 +13,15 @@ CREATE TABLE users (
     phone VARCHAR(20),
     address TEXT,
     role ENUM('user', 'admin') DEFAULT 'user',
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(100),
+    reset_token VARCHAR(100),
+    reset_token_expires DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_email (email),
+    INDEX idx_verification_token (verification_token),
+    INDEX idx_reset_token (reset_token)
 );
 
 -- Car Brands Table
@@ -94,9 +101,11 @@ CREATE TABLE site_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert default admin user (password: admin123 - should be changed)
+-- Insert default admin user
+-- IMPORTANT: Change this password in production!
+-- Default password: Admin@2024! (hashed with bcrypt)
 INSERT INTO users (name, email, password, role) VALUES 
-('Admin', 'admin@nusantararental.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+('Admin', 'admin@nusantararental.com', '$2y$10$vXE9zK.eH8M5wYpL1xP5quZJ3mKYXlGPHC/HKvB5PQx7wY7K8kYpe', 'admin');
 
 -- Insert default site settings
 INSERT INTO site_settings (setting_key, setting_value) VALUES 

@@ -243,7 +243,7 @@ The project is divided into 4 main sections for team members:
 2. Run the SQL file located at: database/database.sql
 3. Default admin credentials:
    - Email: admin@nusantararental.com
-   - Password: admin123
+   - Password: Admin@2024!
 
 ---
 
@@ -276,6 +276,7 @@ NusantaraRentalCar/
 |   |-- orders.php        (Manage orders)
 |   |-- order-detail.php  (Order details)
 |   |-- order-update.php  (Update order status)
+|   |-- export-orders.php (Export orders to CSV)
 |   |-- users.php         (Manage users)
 |   |-- settings.php      (Site settings)
 |
@@ -313,6 +314,8 @@ NusantaraRentalCar/
 |-- order.php             (Place order)
 |-- my-orders.php         (User orders)
 |-- profile.php           (User profile)
+|-- forgot-password.php   (Password reset request)
+|-- reset-password.php    (Password reset form)
 ```
 
 ---
@@ -335,6 +338,128 @@ NusantaraRentalCar/
 | api/filter.php | GET | Filter cars by criteria |
 | api/orders.php | POST | Create new order |
 | api/chat.php | POST | AI chat interaction |
+
+---
+
+## Email Notification System
+
+The project includes an email notification system using PHPMailer with fallback to PHP mail().
+
+### Email Functions (includes/email.php)
+
+```php
+// Send email with PHPMailer (SMTP) or mail()
+send_email($to, $subject, $message, $alt_body = '');
+
+// Send order notification to admin
+send_order_notification($order_id);
+
+// Send order confirmation to user
+send_order_confirmation($order_id);
+
+// Send order status update
+send_order_status_update($order_id);
+
+// Send password reset email
+send_password_reset_email($email, $token);
+```
+
+### Email Configuration
+
+Configure SMTP settings in `includes/email.php`:
+
+```php
+$mail->Host = 'smtp.gmail.com';
+$mail->SMTPAuth = true;
+$mail->Username = 'your_email@gmail.com';
+$mail->Password = 'your_app_password';
+$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+$mail->Port = 587;
+```
+
+If SMTP fails, the system automatically falls back to PHP's mail() function.
+
+---
+
+## Password Reset System
+
+### Features
+- Token-based password reset
+- Token expiration (1 hour)
+- Email delivery with reset link
+- Secure password update
+
+### Pages
+- `forgot-password.php` - Request password reset
+- `reset-password.php` - Reset password with token
+
+### Database Migration
+Run the migration to add password reset fields:
+```bash
+cd database
+run_migration.bat
+```
+
+Or manually import `migration_password_reset.sql`
+
+### Functions (includes/auth.php)
+- `generate_reset_token()` - Create password reset token
+- `validate_reset_token()` - Verify reset token and expiration
+- `reset_user_password()` - Update password with valid token
+
+---
+
+## Helper Functions Reference
+
+### Email Functions (includes/email.php)
+- `send_email($to, $subject, $message, $alt_body)` - Send email via SMTP or mail()
+- `send_order_notification($order_id)` - Notify admin of new order
+- `send_order_confirmation($order_id)` - Confirm order to user
+- `send_order_status_update($order_id)` - Send status update to user
+- `send_password_reset_email($email, $token)` - Send reset link
+
+### Authentication Functions (includes/auth.php)
+- `register_user($name, $email, $password, $phone, $address)` - User registration
+- `login_user($email, $password)` - User authentication
+- `logout_user()` - Session destruction
+- `is_logged_in()` - Check if user is authenticated
+- `is_admin()` - Check if user has admin role
+- `update_user_profile($user_id, $name, $phone, $address)` - Update user info
+- `change_user_password($user_id, $old_password, $new_password)` - Change password
+- `generate_reset_token($email)` - Create password reset token
+- `validate_reset_token($token)` - Verify reset token and return user data
+- `reset_user_password($token, $new_password)` - Reset password with token
+
+### Other Helper Functions (includes/functions.php)
+- `redirect($url)` - URL redirection
+- `set_flash_message($message, $type)` - Set flash notification
+- `get_flash_message()` - Get and clear flash message
+- `display_flash_message()` - Display flash notification
+- `get_site_setting($key)` - Retrieve site setting from database
+- `format_currency($amount)` - Format number to Rupiah (Rp)
+- `format_date($date)` - Format date for display
+- `get_car_brands()` - Get list of all car brands
+- `check_session_timeout()` - Verify session is still valid
+- `get_status_badge($status)` - Return Bootstrap badge HTML for order status
+
+---
+
+## Admin Features
+
+### Dashboard Statistics
+- Total cars count
+- Available cars count
+- Total orders count
+- Pending orders count
+- Total users count
+- Total revenue calculation
+
+### Order Export
+The admin panel includes order export functionality (`admin/export-orders.php`):
+- Export orders to CSV format
+- Filter by status before export
+- Filter by date range
+- Download ready-to-use CSV file
 
 ---
 

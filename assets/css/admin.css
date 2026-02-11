@@ -1,1 +1,713 @@
-/* Admin Styles */
+/* ============================================
+   Nusantara Rental Car - Admin Panel Styling
+   ============================================ */
+
+:root {
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --danger-color: #f85032;
+  --warning-color: #ffc107;
+  --success-color: #10b981;
+  --info-color: #0dcaf0;
+  --light-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --text-muted: #6c757d;
+}
+
+/* ============ Global Styles ============ */
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--light-bg);
+  color: #333;
+}
+
+.admin-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.admin-container {
+  display: flex;
+  flex: 1;
+}
+
+/* ============ Navbar ============ */
+
+.navbar-dark {
+  background: linear-gradient(135deg, #2d3436 0%, #1a1a1a 100%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.navbar-brand i {
+  margin-right: 8px;
+  color: var(--primary-color);
+}
+
+.dropdown-menu {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item:hover {
+  background-color: var(--light-bg);
+}
+
+/* ============ Sidebar ============ */
+
+.admin-sidebar {
+  width: 250px;
+  background: white;
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  left: 0;
+  top: 56px;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.sidebar-content {
+  padding: 20px 0;
+}
+
+.admin-content {
+  margin-left: 250px;
+  padding: 30px;
+  width: calc(100% - 250px);
+}
+
+.nav-pills .nav-link {
+  color: #333;
+  border-radius: 0;
+  margin-bottom: 0;
+  border-left: 3px solid transparent;
+  padding: 12px 20px;
+  transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: var(--light-bg);
+  border-left-color: var(--primary-color);
+}
+
+.nav-pills .nav-link.active {
+  background-color: rgba(102, 126, 234, 0.1);
+  border-left-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.nav-section {
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.nav-section .section-title {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.nav-section:not(:first-child) {
+  border-top: 1px solid var(--border-color);
+}
+
+/* ============ Content Header ============ */
+
+.content-header {
+  margin-bottom: 30px;
+}
+
+.content-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.content-header p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ============ Stat Cards ============ */
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #ddd;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-blue {
+  border-left-color: var(--primary-color);
+}
+
+.stat-card-green {
+  border-left-color: var(--success-color);
+}
+
+.stat-card-orange {
+  border-left-color: #ff6b35;
+}
+
+.stat-card-red {
+  border-left-color: var(--danger-color);
+}
+
+.stat-card-purple {
+  border-left-color: #8b5cf6;
+}
+
+.stat-icon {
+  font-size: 36px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--light-bg);
+  color: var(--primary-color);
+}
+
+.stat-card-blue .stat-icon,
+.stat-card-blue .stat-number {
+  color: var(--primary-color);
+}
+
+.stat-card-green .stat-icon,
+.stat-card-green .stat-number {
+  color: var(--success-color);
+}
+
+.stat-card-orange .stat-icon,
+.stat-card-orange .stat-number {
+  color: #ff6b35;
+}
+
+.stat-card-red .stat-icon,
+.stat-card-red .stat-number {
+  color: var(--danger-color);
+}
+
+.stat-card-purple .stat-icon,
+.stat-card-purple .stat-number {
+  color: #8b5cf6;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ============ Cards ============ */
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.card-header {
+  background-color: var(--light-bg);
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  padding: 18px 20px;
+  border-radius: 10px 10px 0 0;
+}
+
+.card-header h5 {
+  margin: 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.table thead th {
+  background-color: var(--light-bg);
+  color: #1a1a1a;
+  font-weight: 600;
+  border-color: var(--border-color);
+  padding: 15px;
+}
+
+.table tbody td {
+  padding: 15px;
+  border-color: var(--border-color);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.02);
+}
+
+/* ============ Buttons ============ */
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--secondary-color) 100%
+  );
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #653a8a 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border: none;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+  color: white;
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  border: none;
+  color: #1a1a1a;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
+  color: #1a1a1a;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border: none;
+}
+
+.btn-danger:hover {
+  background-color: #d63e1f;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: var(--text-muted);
+  border: none;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+  color: white;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-group-actions .btn {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+/* ============ Forms ============ */
+
+.form-control,
+.form-select {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 10px 14px;
+  font-size: 14px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-label.text-muted {
+  color: var(--text-muted);
+}
+
+/* ============ Alerts ============ */
+
+.alert {
+  border-radius: 8px;
+  border: none;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+}
+
+.alert-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.alert-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.alert-info {
+  background-color: #cffafe;
+  color: #164e63;
+}
+
+/* ============ Badges ============ */
+
+.badge {
+  padding: 6px 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.badge.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color) !important;
+  color: #1a1a1a;
+}
+
+.badge.bg-info {
+  background-color: var(--info-color) !important;
+  color: #1a1a1a;
+}
+
+.badge.bg-secondary {
+  background-color: var(--text-muted) !important;
+}
+
+/* ============ Modals ============ */
+
+.modal-content {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border: none;
+  padding: 20px;
+  border-radius: 10px 10px 0 0;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  border: none;
+  padding: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* ============ Pagination ============ */
+
+.pagination {
+  gap: 5px;
+}
+
+.page-link {
+  border: 1px solid var(--border-color);
+  color: var(--primary-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.page-link:hover {
+  color: white;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* ============ Tables ============ */
+
+.table-responsive {
+  border-radius: 0 0 10px 10px;
+}
+
+/* ============ Tabs ============ */
+
+.nav-tabs {
+  border-bottom: 2px solid var(--border-color);
+  gap: 10px;
+}
+
+.nav-tabs .nav-link {
+  color: var(--text-muted);
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 12px 20px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--primary-color);
+  background-color: transparent;
+  border-bottom-color: var(--primary-color);
+}
+
+/* ============ Flash Messages ============ */
+
+.alert-dismissible .btn-close {
+  padding: 0;
+  opacity: 0.7;
+}
+
+.alert-dismissible .btn-close:hover {
+  opacity: 1;
+}
+
+/* ============ Responsive ============ */
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 200px;
+  }
+
+  .admin-content {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+    padding: 15px;
+  }
+
+  .content-header h1 {
+    font-size: 24px;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .table {
+    font-size: 13px;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 10px;
+  }
+
+  .btn-group button {
+    display: block;
+    margin-bottom: 5px;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-sidebar {
+    display: none;
+  }
+
+  .admin-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 15px;
+  }
+
+  .content-header h1 {
+    font-size: 20px;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* ============ Print Styles ============ */
+
+@media print {
+  .navbar,
+  .admin-sidebar,
+  .btn-group,
+  .pagination {
+    display: none;
+  }
+
+  .admin-content {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ============ Loading State ============ */
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============ Link Styling ============ */
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-link .card {
+  transition: all 0.3s ease;
+}
+
+.card-link.active .card {
+  border: 2px solid var(--primary-color);
+}
+
+/* ============ Error Page ============ */
+
+.error-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--secondary-color) 100%
+  );
+}
+
+.error-content {
+  background: white;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.error-content h1 {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--danger-color);
+  margin-bottom: 20px;
+}
+
+/* ============ Custom Scrollbar ============ */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--light-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

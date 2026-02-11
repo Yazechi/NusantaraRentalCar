@@ -54,8 +54,11 @@ function format_date($date) {
 
 function get_car_brands() {
     global $conn;
-    $result = $conn->query("SELECT * FROM car_brands ORDER BY name ASC");
-    return $result->fetch_all(MYSQLI_ASSOC);
+    $stmt = $conn->prepare("SELECT * FROM car_brands ORDER BY name ASC");
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    return $result;
 }
 
 function check_session_timeout() {

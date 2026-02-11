@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-dark"><i class="fas fa-user-plus"></i> Register</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Register</button>
                     </div>
                 </form>
 

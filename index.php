@@ -2,24 +2,26 @@
 $page_title = 'Home';
 require_once __DIR__ . '/includes/header.php';
 
-require_login();
-
 // Fetch featured cars (available cars, newest first, limit 6)
 $featured_cars = [];
-$sql = "SELECT c.*, cb.name AS brand_name
+$limit = 6;
+$stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name
         FROM cars c
         JOIN car_brands cb ON c.brand_id = cb.id
         WHERE c.is_available = 1
         ORDER BY c.created_at DESC
-        LIMIT 6";
-$result = $conn->query($sql);
+        LIMIT ?");
+$stmt->bind_param("i", $limit);
+$stmt->execute();
+$result = $stmt->get_result();
 if ($result && $result->num_rows > 0) {
     $featured_cars = $result->fetch_all(MYSQLI_ASSOC);
 }
+$stmt->close();
 ?>
 
 <!-- Hero Section -->
-<div class="bg-dark text-white rounded-3 p-5 mb-4">
+<div class="hero-section">
     <div class="row align-items-center">
         <div class="col-md-8">
             <h1 class="fw-bold mb-3">Rent Your Perfect Car</h1>
@@ -37,27 +39,27 @@ if ($result && $result->num_rows > 0) {
 <!-- Features Section -->
 <div class="row mb-5">
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-tags fa-2x text-dark mb-3"></i>
+        <div class="card shadow-sm h-100 feature-card">
+            <div class="card-body">
+                <i class="fas fa-tags"></i>
                 <h5>Affordable Prices</h5>
                 <p class="text-muted mb-0">Competitive daily rates for all vehicle types.</p>
             </div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-shield-alt fa-2x text-dark mb-3"></i>
+        <div class="card shadow-sm h-100 feature-card">
+            <div class="card-body">
+                <i class="fas fa-shield-alt"></i>
                 <h5>Safe & Reliable</h5>
                 <p class="text-muted mb-0">Well-maintained vehicles for a smooth journey.</p>
             </div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-truck fa-2x text-dark mb-3"></i>
+        <div class="card shadow-sm h-100 feature-card">
+            <div class="card-body">
+                <i class="fas fa-truck"></i>
                 <h5>Delivery Option</h5>
                 <p class="text-muted mb-0">Pick up at our location or get the car delivered.</p>
             </div>
@@ -88,15 +90,15 @@ if ($result && $result->num_rows > 0) {
                         <i class="fas fa-users"></i> <?php echo (int)$car['seats']; ?> seats
                     </small>
                 </p>
-                <p class="fw-bold text-dark mb-2"><?php echo format_currency($car['price_per_day']); ?> / day</p>
-                <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn btn-dark btn-sm">View Details</a>
+                <p class="fw-bold text-primary mb-2"><?php echo format_currency($car['price_per_day']); ?> / day</p>
+                <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn btn-primary btn-sm">View Details</a>
             </div>
         </div>
     </div>
     <?php endforeach; ?>
 </div>
 <div class="text-center mb-4">
-    <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-outline-dark">View All Cars <i class="fas fa-arrow-right"></i></a>
+    <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-primary btn-lg">View All Cars <i class="fas fa-arrow-right ms-2"></i></a>
 </div>
 <?php else: ?>
 <div class="text-center py-5">

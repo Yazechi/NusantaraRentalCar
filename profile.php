@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="form-control-plaintext"><?php echo format_date($user['created_at']); ?></p>
                             </div>
 
-                            <button type="submit" class="btn btn-dark"><i class="fas fa-save"></i> Update Profile</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Profile</button>
                         </form>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
                             </div>
 
-                            <button type="submit" class="btn btn-dark"><i class="fas fa-key"></i> Change Password</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Change Password</button>
                         </form>
                     </div>
                 </div>

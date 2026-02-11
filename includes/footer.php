@@ -31,7 +31,36 @@
         </div>
     </footer>
 
+    <!-- AI Chat Widget -->
+    <div id="chat-widget">
+        <button id="chat-toggle" onclick="toggleChat()" title="Chat with AI Assistant">
+            <i class="fas fa-comments"></i>
+        </button>
+        <div id="chat-window">
+            <div id="chat-header">
+                <span><i class="fas fa-robot"></i> Car Assistant</span>
+                <button onclick="toggleChat()" class="chat-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="chat-content">
+                <div class="chat-message bot">
+                    Hello! I'm your car rental assistant. Ask me about:
+                    <ul>
+                        <li>Available cars</li>
+                        <li>Family/budget/luxury cars</li>
+                        <li>Car specifications</li>
+                        <li>Prices and brands</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask about cars..." onkeypress="if(event.key==='Enter')handleSend()">
+                <button onclick="handleSend()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo SITE_URL; ?>/assets/js/main.js"></script>
+    <script src="<?php echo SITE_URL; ?>/assets/js/chatbox.js"></script>
 </body>
 </html>

@@ -12,15 +12,20 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Uploads (user-generated content)
-uploads/*
-!uploads/.gitkeep
-
-# Database credentials
+# Configuration (contains sensitive credentials)
 config/database.php
 
-# PHP
+# Uploads (user-generated content)
+uploads/cars/*
+!uploads/cars/.gitkeep
+
+# Logs
+logs/
 *.log
+error_log
+chat_errors.log
+
+# PHP
 *.cache
 
 # Temporary files
@@ -29,3 +34,15 @@ config/database.php
 *.bak
 ~$*
 tmpclaude-*
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Test files
+test_*.php
+test_*.bat
+check_*.php
+check_*.bat
+list_gemini_models.php
