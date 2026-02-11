@@ -32,10 +32,10 @@ Use this checklist to track development progress. Mark items with [x] when compl
 - [x] profile.php - User profile view and edit
 
 ### Testing
-- [ ] Test user registration
-- [ ] Test user login
-- [ ] Test user logout
-- [ ] Test profile update
+- [x] Test user registration
+- [x] Test user login
+- [x] Test user logout
+- [x] Test profile update
 
 ---
 
