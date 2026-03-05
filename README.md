@@ -1,4 +1,4 @@
-# Nusantara Rental Car
+# METREV
 
 A car rental website built with native PHP, JavaScript, and Bootstrap CSS using MySQL database.
 
@@ -106,7 +106,7 @@ On Windows (XAMPP), this is usually not required.
 
 ## Default Admin Account
 
-- **Email:** admin@nusantararental.com
+- **Email:** admin@metrev.com
 - **Password:** Admin@2024!
 
 **Important:** Change this password after first login in production.

@@ -81,7 +81,7 @@ function send_email_simple($to, $to_name, $subject, $body, $is_html = true) {
  * Send new order notification to admin
  */
 function send_order_notification_admin($order_id, $user_name, $car_name, $total_price) {
-    $admin_email = 'admin@nusantararental.com'; // Update with real admin email
+    $admin_email = 'admin@metrev.com'; // Update with real admin email
     
     $subject = "New Order #$order_id - MeTrev Rental Mobil";
     

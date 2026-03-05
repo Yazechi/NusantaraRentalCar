@@ -1,5 +1,5 @@
 /* ============================================
-   Nusantara Rental Car - Admin JavaScript
+   METREV - Admin JavaScript
    ============================================ */
 
 // Auto-hide alerts after 5 seconds

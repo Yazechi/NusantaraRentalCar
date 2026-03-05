@@ -524,7 +524,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `site_settings` WRITE;
 /*!40000 ALTER TABLE `site_settings` DISABLE KEYS */;
-INSERT INTO `site_settings` VALUES (1,'whatsapp_number','6287812312632','2026-02-11 15:44:36'),(2,'site_name','Nusantara Rental Car','2026-02-10 04:06:48'),(3,'site_address','Jakarta, Indonesia','2026-02-10 04:06:48'),(5,'admin_email','','2026-02-11 14:42:27'),(6,'gemini_api_key','AIzaSyBOxhyTXJQrbSLero8-M9VpMV55TWgYbEQ','2026-02-11 14:42:27'),(10,'midtrans_client_key','','2026-03-03 07:49:06'),(11,'midtrans_server_key','','2026-03-03 07:49:06');
+INSERT INTO `site_settings` VALUES (1,'whatsapp_number','6287812312632','2026-02-11 15:44:36'),(2,'site_name','METREV','2026-02-10 04:06:48'),(3,'site_address','Jakarta, Indonesia','2026-02-10 04:06:48'),(5,'admin_email','','2026-02-11 14:42:27'),(6,'gemini_api_key','AIzaSyBOxhyTXJQrbSLero8-M9VpMV55TWgYbEQ','2026-02-11 14:42:27'),(10,'midtrans_client_key','','2026-03-03 07:49:06'),(11,'midtrans_server_key','','2026-03-03 07:49:06');
 /*!40000 ALTER TABLE `site_settings` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -543,11 +543,11 @@ UNLOCK TABLES;
 -- ============================================
 
 --
--- Default admin account (Email: admin@nusantararental.com / Password: Admin@2024!)
+-- Default admin account (Email: admin@metrev.com / Password: Admin@2024!)
 --
 
 LOCK TABLES `users` WRITE;
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `phone`, `address`, `role`, `email_verified`, `verification_token`, `reset_token`, `reset_token_expires`, `created_at`, `updated_at`) VALUES
-(1, 'Admin', 'admin@nusantararental.com', '$2y$10$b4BByMoVnxb0TRPLzC8owe3JgwnbIuMgw5XCmxrfq9LNAJW6Ud2O2', '082933102923', 'Medan', 'admin', 0, NULL, NULL, NULL, NOW(), NOW());
+(1, 'Admin', 'admin@metrev.com', '$2y$10$b4BByMoVnxb0TRPLzC8owe3JgwnbIuMgw5XCmxrfq9LNAJW6Ud2O2', '082933102923', 'Medan', 'admin', 0, NULL, NULL, NULL, NOW(), NOW());
 UNLOCK TABLES;
 

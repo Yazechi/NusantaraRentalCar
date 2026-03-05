@@ -1,4 +1,4 @@
-// Main JavaScript - Nusantara Rental Car
+// Main JavaScript - METREV
 
 // ============ Smooth Scroll for Anchor Links ============
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -206,5 +206,5 @@ backToTopButton.addEventListener('click', () => {
 });
 
 // ============ Console Welcome Message ============
-console.log('%c🚗 Nusantara Rental Car', 'color: #667eea; font-size: 20px; font-weight: bold;');
+console.log('%c🚗 METREV', 'color: #667eea; font-size: 20px; font-weight: bold;');
 console.log('%cWelcome to our car rental platform!', 'color: #764ba2; font-size: 14px;');
