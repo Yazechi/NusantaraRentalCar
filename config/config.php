@@ -9,13 +9,17 @@ ob_start();
 // Environment detection
 $is_production = ($_SERVER['SERVER_NAME'] ?? 'localhost') !== 'localhost';
 
-// Session security
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_strict_mode', 1);
+// Session security - only set ini before session starts
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_strict_mode', 1);
+}
 
 // HTTPS enforcement for production
 if ($is_production) {
-    ini_set('session.cookie_secure', 1); // Require HTTPS for cookies
+    if (session_status() === PHP_SESSION_NONE) {
+        ini_set('session.cookie_secure', 1); // Require HTTPS for cookies
+    }
     
     // Redirect HTTP to HTTPS
     if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
@@ -25,7 +29,9 @@ if ($is_production) {
     }
 }
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Error handling - Different for production and development
 if ($is_production) {
@@ -44,7 +50,7 @@ if ($is_production) {
 }
 
 // Site constants
-define('SITE_NAME', 'Nusantara Rental Car');
+define('SITE_NAME', 'METREV');
 define('SITE_URL', $is_production ? 'https://yourdomain.com' : 'http://localhost/NusantaraRentalCar');
 define('BASE_PATH', dirname(__DIR__));
 define('UPLOAD_PATH', BASE_PATH . '/uploads/cars/');
@@ -57,7 +63,7 @@ define('SMTP_PORT', getenv('SMTP_PORT') ?: 587);
 define('SMTP_USER', getenv('SMTP_USER') ?: 'your-email@gmail.com');
 define('SMTP_PASS', getenv('SMTP_PASS') ?: 'your-app-password');
 define('SMTP_FROM', getenv('SMTP_FROM') ?: 'noreply@nusantararental.com');
-define('SMTP_FROM_NAME', 'Nusantara Rental Car');
+define('SMTP_FROM_NAME', 'MeTrev Rental Mobil');
 
 // File upload limits
 define('MAX_FILE_SIZE', 2 * 1024 * 1024); // 2MB
@@ -76,7 +82,7 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 if ($is_production) {
     // Additional security headers for production
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self';");
+    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://app.sandbox.midtrans.com https://app.midtrans.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://app.sandbox.midtrans.com https://app.midtrans.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://app.sandbox.midtrans.com https://app.midtrans.com; frame-src https://app.sandbox.midtrans.com https://app.midtrans.com;");
 }
 
 // Create logs directory if it doesn't exist

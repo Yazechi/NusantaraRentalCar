@@ -1,8 +1,9 @@
 <?php
 // Admin Cars List Page
-$page_title = 'Cars Management';
-
 $project_root = dirname(__DIR__);
+if (!session_id()) session_start();
+require_once $project_root . '/includes/language.php';
+$page_title = __('admin_cars_management');
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -50,7 +51,7 @@ $total_result = $conn->query("SELECT COUNT(*) as count FROM cars");
 $total_cars = $total_result->fetch_assoc()['count'];
 $total_pages = ceil($total_cars / $per_page);
 
-// Get cars with brand info
+// Get cars with brand info and stock counts
 $cars_query = "
     SELECT 
         c.id, 
@@ -58,8 +59,10 @@ $cars_query = "
         c.model, 
         c.year,
         c.price_per_day,
-        c.is_available,
-        b.name as brand_name
+        b.name as brand_name,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id) AS total_stock,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'rented') AS rented_stock
     FROM cars c
     JOIN car_brands b ON c.brand_id = b.id
     ORDER BY c.created_at DESC
@@ -75,11 +78,11 @@ $stmt->close();
 <div class="admin-content">
     <div class="content-header d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="fas fa-car"></i> Cars Management</h1>
-            <p>Manage all rental cars in the system.</p>
+            <h1><i class="fas fa-car"></i> <?php echo __('admin_cars_management'); ?></h1>
+            <p><?php echo __('admin_manage_cars'); ?></p>
         </div>
         <a href="<?php echo SITE_URL; ?>/admin/car-add.php" class="btn btn-success">
-            <i class="fas fa-plus"></i> Add New Car
+            <i class="fas fa-plus"></i> <?php echo __('admin_add_new_car'); ?>
         </a>
     </div>
 
@@ -105,20 +108,20 @@ $stmt->close();
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>Brand</th>
-                        <th>Name</th>
-                        <th>Model</th>
-                        <th>Year</th>
-                        <th>Price/Day</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th><?php echo __('admin_brand'); ?></th>
+                        <th><?php echo __('admin_car_name'); ?></th>
+                        <th><?php echo __('admin_model'); ?></th>
+                        <th><?php echo __('admin_year'); ?></th>
+                        <th><?php echo __('admin_price_day'); ?></th>
+                        <th><?php echo __('admin_stock'); ?></th>
+                        <th><?php echo __('admin_actions'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($cars)): ?>
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox"></i> No cars found
+                                <i class="fas fa-inbox"></i> <?php echo __('admin_no_cars_found'); ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -131,20 +134,23 @@ $stmt->close();
                                 <td><?php echo $car['year']; ?></td>
                                 <td><strong><?php echo format_currency($car['price_per_day']); ?></strong></td>
                                 <td>
-                                    <?php if ($car['is_available']): ?>
-                                        <span class="badge bg-success">Available</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-danger">Not Available</span>
+                                    <span class="badge bg-success"><?php echo (int)$car['available_stock']; ?> <?php echo __('admin_avail'); ?></span>
+                                    <?php if ($car['rented_stock'] > 0): ?>
+                                        <span class="badge bg-warning"><?php echo (int)$car['rented_stock']; ?> <?php echo __('admin_rented'); ?></span>
                                     <?php endif; ?>
+                                    <br><small class="text-muted">Total: <?php echo (int)$car['total_stock']; ?></small>
+                                    <a href="<?php echo SITE_URL; ?>/admin/car-stock.php?car_id=<?php echo $car['id']; ?>" class="btn btn-sm btn-outline-secondary ms-1" title="<?php echo __('admin_manage_stock_units'); ?>">
+                                        <i class="fas fa-boxes"></i>
+                                    </a>
                                 </td>
                                 <td>
                                     <a href="<?php echo SITE_URL; ?>/admin/car-edit.php?id=<?php echo $car['id']; ?>"
                                         class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> Edit
+                                        <i class="fas fa-edit"></i> <?php echo __('admin_edit'); ?>
                                     </a>
                                     <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
                                         data-bs-target="#deleteModal<?php echo $car['id']; ?>">
-                                        <i class="fas fa-trash"></i> Delete
+                                        <i class="fas fa-trash"></i> <?php echo __('admin_delete'); ?>
                                     </button>
                                 </td>
                             </tr>
@@ -154,7 +160,7 @@ $stmt->close();
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
-                                            <h5 class="modal-title">Delete Car</h5>
+                                            <h5 class="modal-title"><?php echo __('admin_delete'); ?></h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
@@ -162,12 +168,12 @@ $stmt->close();
                                             <p class="text-muted small">This action cannot be undone.</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('admin_cancel'); ?></button>
                                             <form method="POST" style="display: inline;">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
                                                 <?php echo csrf_input_field(); ?>
-                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                                <button type="submit" class="btn btn-danger"><?php echo __('admin_delete'); ?></button>
                                             </form>
                                         </div>
                                     </div>

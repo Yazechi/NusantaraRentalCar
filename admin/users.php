@@ -1,8 +1,9 @@
 <?php
 // Admin Users Management Page
-$page_title = 'Users Management';
-
 $project_root = dirname(__DIR__);
+if (!session_id()) session_start();
+require_once $project_root . '/includes/language.php';
+$page_title = __('admin_users_management');
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -85,15 +86,15 @@ $admin_stats['total_users'] = $result->fetch_assoc()['count'];
 $result = $conn->query("SELECT COUNT(*) as count FROM orders");
 $admin_stats['total_orders'] = $result->fetch_assoc()['count'];
 
-$result = $conn->query("SELECT SUM(total_price) as total FROM orders");
+$result = $conn->query("SELECT COALESCE(SUM(total_price), 0) as total FROM orders WHERE payment_status = 'paid'");
 $row = $result->fetch_assoc();
 $admin_stats['total_revenue'] = $row['total'] ?? 0;
 ?>
 
 <div class="admin-content">
     <div class="content-header">
-        <h1><i class="fas fa-users"></i> Users Management</h1>
-        <p>Manage all registered users.</p>
+        <h1><i class="fas fa-users"></i> <?php echo __('admin_users_management'); ?></h1>
+        <p><?php echo __('admin_manage_users_desc'); ?></p>
     </div>
 
     <?php if (!empty($error_message)): ?>
@@ -117,7 +118,7 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
         <div class="col-md-4 mb-3">
             <div class="card stat-card stat-card-blue">
                 <div class="card-body">
-                    <p class="text-muted mb-1 small">Total Users</p>
+                    <p class="text-muted mb-1 small"><?php echo __('admin_total_users'); ?></p>
                     <h3 class="mb-0"><?php echo $admin_stats['total_users']; ?></h3>
                 </div>
             </div>
@@ -125,7 +126,7 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
         <div class="col-md-4 mb-3">
             <div class="card stat-card stat-card-green">
                 <div class="card-body">
-                    <p class="text-muted mb-1 small">Total Orders</p>
+                    <p class="text-muted mb-1 small"><?php echo __('admin_total_orders'); ?></p>
                     <h3 class="mb-0"><?php echo $admin_stats['total_orders']; ?></h3>
                 </div>
             </div>
@@ -133,7 +134,7 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
         <div class="col-md-4 mb-3">
             <div class="card stat-card stat-card-orange">
                 <div class="card-body">
-                    <p class="text-muted mb-1 small">Total Revenue</p>
+                    <p class="text-muted mb-1 small"><?php echo __('admin_total_revenue'); ?></p>
                     <h3 class="mb-0"><?php echo format_currency($admin_stats['total_revenue']); ?></h3>
                 </div>
             </div>
@@ -147,19 +148,19 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Orders</th>
-                        <th>Joined</th>
-                        <th>Actions</th>
+                        <th><?php echo __('admin_name'); ?></th>
+                        <th><?php echo __('admin_email'); ?></th>
+                        <th><?php echo __('admin_phone'); ?></th>
+                        <th><?php echo __('admin_total_orders'); ?></th>
+                        <th><?php echo __('admin_joined'); ?></th>
+                        <th><?php echo __('admin_actions'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($users)): ?>
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox"></i> No users found
+                                <i class="fas fa-inbox"></i> <?php echo __('admin_no_users'); ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -180,11 +181,11 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button type="button" class="btn btn-info" data-bs-toggle="modal"
                                             data-bs-target="#viewModal<?php echo $user['id']; ?>">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('admin_view'); ?>
                                         </button>
                                         <button type="button" class="btn btn-danger" data-bs-toggle="modal"
                                             data-bs-target="#deleteModal<?php echo $user['id']; ?>">
-                                            <i class="fas fa-trash"></i> Delete
+                                            <i class="fas fa-trash"></i> <?php echo __('admin_delete'); ?>
                                         </button>
                                     </div>
                                 </td>
@@ -195,32 +196,32 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title">User Details</h5>
+                                            <h5 class="modal-title"><?php echo __('admin_user_details'); ?></h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
                                             <div class="mb-3">
-                                                <label class="form-label text-muted small">Name</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_name'); ?></label>
                                                 <p><?php echo sanitize_output($user['name']); ?></p>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label text-muted small">Email</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_email'); ?></label>
                                                 <p><?php echo sanitize_output($user['email']); ?></p>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label text-muted small">Phone</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_phone'); ?></label>
                                                 <p><?php echo sanitize_output($user['phone'] ?? '-'); ?></p>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label text-muted small">Address</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_address'); ?></label>
                                                 <p><?php echo sanitize_output($user['address'] ?? '-'); ?></p>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label text-muted small">Total Orders</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_total_orders'); ?></label>
                                                 <p><?php echo $user['total_orders']; ?></p>
                                             </div>
                                             <div>
-                                                <label class="form-label text-muted small">Joined</label>
+                                                <label class="form-label text-muted small"><?php echo __('admin_joined'); ?></label>
                                                 <p><?php echo format_date($user['created_at']); ?></p>
                                             </div>
                                         </div>
@@ -236,23 +237,23 @@ $admin_stats['total_revenue'] = $row['total'] ?? 0;
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
-                                            <h5 class="modal-title">Delete User</h5>
+                                            <h5 class="modal-title"><?php echo __('admin_delete_user'); ?></h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Are you sure you want to delete <strong><?php echo sanitize_output($user['name']); ?></strong>?</p>
+                                            <p><?php echo __('admin_confirm_delete_user'); ?> <strong><?php echo sanitize_output($user['name']); ?></strong>?</p>
                                             <p class="text-warning" style="font-size: 13px;">
                                                 <i class="fas fa-exclamation-triangle"></i>
-                                                This will also delete all orders associated with this user. This action cannot be undone.
+                                                <?php echo __('admin_delete_user_warning'); ?>
                                             </p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('admin_cancel'); ?></button>
                                             <form method="POST" style="display: inline;">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
                                                 <?php echo csrf_input_field(); ?>
-                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                                <button type="submit" class="btn btn-danger"><?php echo __('admin_delete'); ?></button>
                                             </form>
                                         </div>
                                     </div>

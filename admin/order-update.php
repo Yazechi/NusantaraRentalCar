@@ -1,8 +1,9 @@
 <?php
 // Admin Order Update Status Page
-$page_title = 'Update Order Status';
-
 $project_root = dirname(__DIR__);
+if (!session_id()) session_start();
+require_once $project_root . '/includes/language.php';
+$page_title = __('admin_update_order_status');
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -53,6 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 $stmt->close();
+                
+                // If completed or cancelled, mark the stock unit as available again
+                if (in_array($new_status, ['completed', 'cancelled'])) {
+                    $stock_stmt = $conn->prepare("UPDATE car_stock SET status = 'available' WHERE id = (SELECT car_stock_id FROM orders WHERE id = ?)");
+                    $stock_stmt->bind_param("i", $order_id);
+                    $stock_stmt->execute();
+                    $stock_stmt->close();
+                }
+                // If approved, ensure stock unit is marked as rented
+                if ($new_status === 'approved') {
+                    $stock_stmt = $conn->prepare("UPDATE car_stock SET status = 'rented' WHERE id = (SELECT car_stock_id FROM orders WHERE id = ?)");
+                    $stock_stmt->bind_param("i", $order_id);
+                    $stock_stmt->execute();
+                    $stock_stmt->close();
+                }
+                
                 set_flash_message('success', 'Order status updated successfully.');
                 redirect(SITE_URL . '/admin/order-detail.php?id=' . $order_id);
                 exit;
@@ -88,11 +105,11 @@ $stmt->close();
 <div class="admin-content">
     <div class="content-header d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="fas fa-edit"></i> Update Order Status</h1>
-            <p>Change the status of order #<?php echo $order['id']; ?></p>
+            <h1><i class="fas fa-edit"></i> <?php echo __('admin_update_order_status'); ?></h1>
+            <p><?php echo __('admin_change_status'); ?> #<?php echo $order['id']; ?></p>
         </div>
         <a href="<?php echo SITE_URL; ?>/admin/order-detail.php?id=<?php echo $order['id']; ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Order
+            <i class="fas fa-arrow-left"></i> <?php echo __('admin_back_to_orders'); ?>
         </a>
     </div>
 
@@ -107,26 +124,26 @@ $stmt->close();
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Order Information</h5>
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> <?php echo __('admin_order_detail'); ?></h5>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Customer</label>
+                            <label class="form-label text-muted"><?php echo __('admin_customer'); ?></label>
                             <p><?php echo sanitize_output($order_info['user_name']); ?></p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Car</label>
+                            <label class="form-label text-muted"><?php echo __('admin_car'); ?></label>
                             <p><?php echo sanitize_output($order_info['car_name']); ?></p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Rental Start</label>
+                            <label class="form-label text-muted"><?php echo __('admin_start_date'); ?></label>
                             <p><?php echo format_date($order_info['rental_start_date']); ?></p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Rental End</label>
+                            <label class="form-label text-muted"><?php echo __('admin_end_date'); ?></label>
                             <p><?php echo format_date($order_info['rental_end_date']); ?></p>
                         </div>
                     </div>
@@ -136,15 +153,15 @@ $stmt->close();
             <!-- Status Update Form -->
             <div class="card mt-3">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Update Status</h5>
+                    <h5 class="mb-0"><i class="fas fa-tasks"></i> <?php echo __('admin_update_order'); ?></h5>
                 </div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
-                            <label for="status" class="form-label">New Status *</label>
+                            <label for="status" class="form-label"><?php echo __('admin_new_status'); ?> *</label>
                             <p class="text-muted mb-2">Current Status: <strong><?php echo get_status_badge($order['status']); ?></strong></p>
                             <select class="form-select" id="status" name="status" required>
-                                <option value="">Select new status</option>
+                                <option value=""><?php echo __('admin_select_status'); ?></option>
                                 <?php foreach ($valid_statuses as $st): ?>
                                     <?php if ($st !== $order['status']): ?>
                                         <option value="<?php echo $st; ?>">
@@ -156,7 +173,7 @@ $stmt->close();
                         </div>
 
                         <div class="mb-3">
-                            <label for="update_notes" class="form-label">Notes</label>
+                            <label for="update_notes" class="form-label"><?php echo __('admin_update_notes'); ?></label>
                             <textarea class="form-control" id="update_notes" name="update_notes" rows="4" placeholder="Add any notes about this status update..."></textarea>
                             <small class="text-muted">These notes will be appended to the order notes.</small>
                         </div>
@@ -165,10 +182,10 @@ $stmt->close();
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check"></i> Update Status
+                                <i class="fas fa-check"></i> <?php echo __('admin_confirm_update'); ?>
                             </button>
                             <a href="<?php echo SITE_URL; ?>/admin/order-detail.php?id=<?php echo $order['id']; ?>" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancel
+                                <i class="fas fa-times"></i> <?php echo __('admin_cancel'); ?>
                             </a>
                         </div>
                     </form>
@@ -180,27 +197,27 @@ $stmt->close();
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-circle-info"></i> Status Guide</h5>
+                    <h5 class="mb-0"><i class="fas fa-circle-info"></i> <?php echo __('admin_status_guide_title'); ?></h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <p class="mb-2"><strong class="badge bg-warning">Pending</strong></p>
-                        <small class="text-muted">Initial status when order is first placed.</small>
+                        <p class="mb-2"><strong class="badge bg-warning"><?php echo __('admin_pending'); ?></strong></p>
+                        <small class="text-muted"><?php echo __('admin_pending_desc'); ?></small>
                     </div>
                     <hr>
                     <div class="mb-3">
-                        <p class="mb-2"><strong class="badge bg-success">Approved</strong></p>
-                        <small class="text-muted">Order has been approved and is ready for rental.</small>
+                        <p class="mb-2"><strong class="badge bg-success"><?php echo __('admin_approved'); ?></strong></p>
+                        <small class="text-muted"><?php echo __('admin_approved_desc'); ?></small>
                     </div>
                     <hr>
                     <div class="mb-3">
-                        <p class="mb-2"><strong class="badge bg-danger">Cancelled</strong></p>
-                        <small class="text-muted">Order has been cancelled.</small>
+                        <p class="mb-2"><strong class="badge bg-danger"><?php echo __('admin_cancelled'); ?></strong></p>
+                        <small class="text-muted"><?php echo __('admin_cancelled_desc'); ?></small>
                     </div>
                     <hr>
                     <div>
-                        <p class="mb-2"><strong class="badge bg-info">Completed</strong></p>
-                        <small class="text-muted">Rental has been completed.</small>
+                        <p class="mb-2"><strong class="badge bg-info"><?php echo __('admin_completed'); ?></strong></p>
+                        <small class="text-muted"><?php echo __('admin_completed_desc'); ?></small>
                     </div>
                 </div>
             </div>

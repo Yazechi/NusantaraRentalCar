@@ -8,6 +8,7 @@ if (!defined('BASE_PATH')) {
     require_once $project_root . '/includes/auth.php';
     require_once $project_root . '/includes/functions.php';
 }
+require_once $project_root . '/includes/language.php';
 
 // Jika sudah login sebagai admin, redirect ke dashboard
 if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin') {
@@ -16,7 +17,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'admin') {
 }
 
 $error_message = '';
-$page_title = 'Admin Login';
+$page_title = __('admin_login');
 
 // Proses login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -64,9 +65,23 @@ $csrf_token = generate_csrf_token();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - <?php echo SITE_NAME; ?></title>
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/images/meTrevFinal.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'ArchicocoRegular';
+            src: url('<?php echo SITE_URL; ?>/assets/fonts/ArchicocoRegular.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
+        .brand-text {
+            font-family: 'ArchicocoRegular', sans-serif;
+            font-weight: bold;
+            font-style: italic;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -162,10 +177,10 @@ $csrf_token = generate_csrf_token();
         <div class="login-box">
             <div class="login-header">
                 <div class="icon-wrapper">
-                    <i class="fas fa-lock"></i>
+                    <img src="<?php echo SITE_URL; ?>/assets/images/meTrevFinal.png" alt="METREV" style="height:64px;width:64px;object-fit:contain;border-radius:50%;">
                 </div>
-                <h1>Admin Panel</h1>
-                <p><?php echo SITE_NAME; ?></p>
+                <h1><?php echo __('admin_panel'); ?></h1>
+                <p class="brand-text"><?php echo SITE_NAME; ?></p>
             </div>
 
             <?php if (!empty($error_message)): ?>
@@ -187,23 +202,23 @@ $csrf_token = generate_csrf_token();
 
             <form method="POST" action="">
                 <div class="form-group">
-                    <label for="email" class="form-label">Email Address</label>
+                    <label for="email" class="form-label"><?php echo __('admin_email_address'); ?></label>
                     <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
+                    <label for="password" class="form-label"><?php echo __('admin_password'); ?></label>
                     <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
                 </div>
 
                 <?php echo csrf_input_field(); ?>
 
-                <button type="submit" class="btn-login">Login</button>
+                <button type="submit" class="btn-login"><?php echo __('admin_login'); ?></button>
             </form>
 
             <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
                 <p style="color: #666; font-size: 13px; margin: 0;">
-                    <a href="<?php echo SITE_URL; ?>/index.php" style="color: #667eea; text-decoration: none;">← Back to Home</a>
+                    <a href="<?php echo SITE_URL; ?>/index.php" style="color: #667eea; text-decoration: none;">← <?php echo __('admin_back_to_site'); ?></a>
                 </p>
             </div>
         </div>

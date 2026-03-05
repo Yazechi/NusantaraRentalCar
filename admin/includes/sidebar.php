@@ -12,45 +12,49 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <!-- Dashboard -->
             <a class="nav-link <?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
                 href="<?php echo SITE_URL; ?>/admin/dashboard.php">
-                <i class="fas fa-chart-line"></i> Dashboard
+                <i class="fas fa-chart-line"></i> <?php echo __('admin_dashboard'); ?>
             </a>
 
             <!-- Cars Management -->
             <div class="nav-section">
                 <div class="section-title">
-                    <i class="fas fa-car"></i> Cars Management
+                    <i class="fas fa-car"></i> <?php echo __('admin_cars_management'); ?>
                 </div>
                 <a class="nav-link ms-3 <?php echo $current_page === 'cars.php' ? 'active' : ''; ?>"
                     href="<?php echo SITE_URL; ?>/admin/cars.php">
-                    <i class="fas fa-list"></i> List Cars
+                    <i class="fas fa-list"></i> <?php echo __('admin_list_cars'); ?>
                 </a>
                 <a class="nav-link ms-3 <?php echo $current_page === 'car-add.php' ? 'active' : ''; ?>"
                     href="<?php echo SITE_URL; ?>/admin/car-add.php">
-                    <i class="fas fa-plus"></i> Add Car
+                    <i class="fas fa-plus"></i> <?php echo __('admin_add_car'); ?>
+                </a>
+                <a class="nav-link ms-3 <?php echo $current_page === 'car-stock.php' ? 'active' : ''; ?>"
+                    href="<?php echo SITE_URL; ?>/admin/cars.php">
+                    <i class="fas fa-boxes"></i> <?php echo __('admin_car_stock'); ?>
                 </a>
             </div>
 
             <!-- Orders Management -->
             <div class="nav-section">
                 <div class="section-title">
-                    <i class="fas fa-shopping-cart"></i> Orders Management
+                    <i class="fas fa-shopping-cart"></i> <?php echo __('admin_orders_management'); ?>
                 </div>
                 <a class="nav-link ms-3 <?php echo $current_page === 'orders.php' ? 'active' : ''; ?>"
                     href="<?php echo SITE_URL; ?>/admin/orders.php">
-                    <i class="fas fa-list"></i> All Orders
+                    <i class="fas fa-list"></i> <?php echo __('admin_all_orders'); ?>
                 </a>
             </div>
 
             <!-- Users Management -->
             <a class="nav-link <?php echo $current_page === 'users.php' ? 'active' : ''; ?>"
                 href="<?php echo SITE_URL; ?>/admin/users.php">
-                <i class="fas fa-users"></i> Users
+                <i class="fas fa-users"></i> <?php echo __('admin_users'); ?>
             </a>
 
             <!-- Settings -->
             <a class="nav-link <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>"
                 href="<?php echo SITE_URL; ?>/admin/settings.php">
-                <i class="fas fa-cog"></i> Settings
+                <i class="fas fa-cog"></i> <?php echo __('admin_settings'); ?>
             </a>
         </nav>
     </div>

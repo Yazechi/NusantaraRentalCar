@@ -66,24 +66,40 @@ function renderCars(cars) {
                 ? `uploads/cars/${car.image_main}` 
                 : 'assets/images/cars/default.png';
             
+            const discount = parseInt(car.discount_percent) || 0;
+            const originalPrice = parseInt(car.price_per_day);
+            const discountedPrice = discount > 0 ? Math.round(originalPrice * (1 - discount / 100)) : originalPrice;
+            
+            const discountBadge = discount > 0 
+                ? `<span class="discount-badge"><i class="fas fa-bolt me-1"></i>${discount}% OFF</span>` 
+                : '';
+            
+            const priceHtml = discount > 0
+                ? `<span class="price-original">Rp ${new Intl.NumberFormat('id-ID').format(originalPrice)}</span> <span class="price-discounted">Rp ${new Intl.NumberFormat('id-ID').format(discountedPrice)}</span> <small class="text-muted fw-normal">/ day</small>`
+                : `<span class="price-normal">Rp ${new Intl.NumberFormat('id-ID').format(originalPrice)}</span> <small class="text-muted fw-normal">/ day</small>`;
+            
             html += `
             <div class="col-md-4 mb-4">
-                <div class="card h-100 car-card shadow-sm">
-                    <div class="car-image-wrapper">
-                        <img src="${imageUrl}" class="card-img-top" alt="${car.brand_name} ${car.name}">
-                        <div class="card-overlay">
+                <div class="deal-card h-100 shadow-sm">
+                    <div class="deal-image">
+                        <img src="${imageUrl}" alt="${car.brand_name} ${car.name}">
+                        ${discountBadge}
+                        <div style="position:absolute;top:10px;right:10px;">
                             <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Available</span>
                         </div>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title text-primary">${car.brand_name} ${car.name}</h5>
+                        <h5 class="card-title fw-bold">${car.brand_name} ${car.name}</h5>
+                        ${car.plate_number ? '<p class="mb-1"><span class="badge bg-dark"><i class="fas fa-id-card me-1"></i>' + car.plate_number + '</span></p>' : ''}
                         <p class="text-muted mb-2">
                             <small>
                                 <i class="fas fa-cog me-1"></i>${car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)} |
                                 <i class="fas fa-users ms-2 me-1"></i>${car.seats} seats
+                                ${car.type_name ? '| <i class="fas fa-car-side ms-2 me-1"></i>' + car.type_name : ''}
+                                ${car.color ? '| <i class="fas fa-palette ms-2 me-1"></i>' + car.color : ''}
                             </small>
                         </p>
-                        <p class="fw-bold text-primary mb-3 fs-5">Rp ${new Intl.NumberFormat('id-ID').format(car.price_per_day)} <small class="text-muted fw-normal">/ day</small></p>
+                        <p class="mb-3">${priceHtml}</p>
                         <a href="car-detail.php?id=${car.id}" class="btn btn-primary btn-sm w-100">
                             <i class="fas fa-eye me-1"></i>View Details
                         </a>

@@ -76,17 +76,25 @@ function getCarsContext() {
     
     $stmt = $conn->prepare("
         SELECT 
+            c.id,
             c.name, 
             cb.name AS brand_name,
+            ct.name AS type_name,
             c.seats,
             c.transmission,
             c.fuel_type,
+            c.color,
             c.price_per_day,
             c.year,
-            c.description
+            c.description,
+            GROUP_CONCAT(rg.name SEPARATOR ', ') AS rental_goals
         FROM cars c
         JOIN car_brands cb ON c.brand_id = cb.id
+        LEFT JOIN car_types ct ON c.type_id = ct.id
+        LEFT JOIN car_rental_goals crg ON c.id = crg.car_id
+        LEFT JOIN rental_goals rg ON crg.rental_goal_id = rg.id
         WHERE c.is_available = 1
+        GROUP BY c.id
         ORDER BY c.price_per_day ASC
     ");
     $stmt->execute();
@@ -101,8 +109,12 @@ function getCarsContext() {
     $context = "Available cars in our rental fleet:\n\n";
     foreach ($cars as $car) {
         $context .= "- {$car['brand_name']} {$car['name']} ({$car['year']})\n";
+        $context .= "  Type: " . ($car['type_name'] ?? 'N/A') . ", Color: " . ($car['color'] ?? 'N/A') . "\n";
         $context .= "  Seats: {$car['seats']}, Transmission: {$car['transmission']}, Fuel: {$car['fuel_type']}\n";
         $context .= "  Price: Rp " . number_format($car['price_per_day'], 0, ',', '.') . " per day\n";
+        if (!empty($car['rental_goals'])) {
+            $context .= "  Suitable for: {$car['rental_goals']}\n";
+        }
         if (!empty($car['description'])) {
             $context .= "  Description: {$car['description']}\n";
         }
@@ -121,13 +133,15 @@ function getGeminiResponse($userMessage, $carsContext, $apiKey) {
         $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
         
         // System prompt
-        $systemPrompt = "You are a helpful car rental assistant for Nusantara Rental Car. " .
+        $systemPrompt = "You are a helpful car rental assistant for MeTrev Rental Mobil. " .
                        "Answer customer questions about available cars based on the information provided. " .
+                       "You know each car's brand, name, type (SUV, Sedan, MPV, Pickup, Truck, EV, etc.), color, seats, transmission, fuel type, price, and what purposes they are suitable for (Business Trip, Vacation, Honeymoon, Wedding, Industrial, Construction, etc.). " .
+                       "When asked about specific car colors, types, or rental purposes, provide accurate answers from the data. " .
                        "Be friendly, concise, and helpful. If asked about cars not in the list, politely say they're not available. " .
-                       "Always mention prices in Indonesian Rupiah (Rp). Keep responses under 100 words. " .
+                       "Always mention prices in Indonesian Rupiah (Rp). Keep responses under 150 words. " .
                        "Format your response in plain text suitable for chat - use line breaks for readability but NO markdown formatting (no asterisks, no bold). " .
                        "List items on separate lines with simple numbering (1., 2., 3.) or dashes (-). " .
-                       "Make it easy to read in a simple text chat box.\n\n" .
+                       "Respond in the same language the customer uses (English or Indonesian).\n\n" .
                        $carsContext;
         
         // Prepare request
@@ -220,13 +234,105 @@ function getGeminiResponse($userMessage, $carsContext, $apiKey) {
 function getKeywordResponse($userMessage, $conn) {
     $userMessage = strtolower($userMessage);
     $reply = "I'm here to help! You can ask me about:\n" .
-             "- Family cars (7+ seats)\n" .
-             "- Budget/cheap cars\n" .
-             "- Luxury/premium cars\n" .
-             "- Automatic or manual transmission\n" .
-             "- Specific car brands\n" .
+             "- Car types (SUV, Sedan, MPV, Pickup, Truck, EV)\n" .
+             "- Rental purposes (Business, Vacation, Wedding, Industrial)\n" .
+             "- Car colors, prices, brands\n" .
+             "- Family/budget/luxury cars\n" .
              "- Available cars";
     
+    // Type-based queries
+    $type_keywords = [
+        'suv' => 'SUV', 'sedan' => 'Sedan', 'mpv' => 'MPV', 'hatchback' => 'Hatchback',
+        'pickup' => 'Pick-Up', 'pick-up' => 'Pick-Up', 'truck' => 'Truck', 'van' => 'Van',
+        'atv' => 'ATV', 'ev' => 'EV', 'electric' => 'EV', 'listrik' => 'EV',
+        'coupe' => 'Coupe', 'convertible' => 'Convertible', 'minibus' => 'Minibus'
+    ];
+    foreach ($type_keywords as $keyword => $type_name) {
+        if (strpos($userMessage, $keyword) !== false) {
+            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, c.color 
+                FROM cars c JOIN car_brands cb ON c.brand_id = cb.id JOIN car_types ct ON c.type_id = ct.id 
+                WHERE ct.name = ? AND c.is_available = 1 LIMIT 3");
+            $stmt->bind_param("s", $type_name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $cars = $result->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+            if ($cars) {
+                $reply = "Here are our $type_name vehicles:\n";
+                foreach ($cars as $car) {
+                    $reply .= "- {$car['brand_name']} {$car['name']} ({$car['color']}) - Rp " . number_format($car['price_per_day'], 0, ',', '.') . "/day\n";
+                }
+            } else {
+                $reply = "Sorry, no $type_name vehicles are currently available.";
+            }
+            return $reply;
+        }
+    }
+
+    // Goal-based queries
+    $goal_keywords = [
+        'bisnis' => 'Business Trip', 'business' => 'Business Trip',
+        'liburan' => 'Vacation', 'vacation' => 'Vacation', 'holiday' => 'Vacation',
+        'honeymoon' => 'Honeymoon', 'bulan madu' => 'Honeymoon',
+        'wedding' => 'Wedding', 'nikah' => 'Wedding', 'pernikahan' => 'Wedding',
+        'industrial' => 'Industrial', 'industri' => 'Industrial',
+        'construction' => 'Construction', 'konstruksi' => 'Construction',
+        'cargo' => 'Cargo & Delivery', 'kirim' => 'Cargo & Delivery',
+        'adventure' => 'Adventure & Off-Road', 'petualangan' => 'Adventure & Off-Road',
+        'airport' => 'Airport Transfer', 'bandara' => 'Airport Transfer',
+        'event' => 'Events & Parties', 'acara' => 'Events & Parties', 'pesta' => 'Events & Parties',
+    ];
+    foreach ($goal_keywords as $keyword => $goal_name) {
+        if (strpos($userMessage, $keyword) !== false) {
+            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, c.color
+                FROM cars c JOIN car_brands cb ON c.brand_id = cb.id 
+                JOIN car_rental_goals crg ON c.id = crg.car_id 
+                JOIN rental_goals rg ON crg.rental_goal_id = rg.id
+                WHERE rg.name = ? AND c.is_available = 1 LIMIT 3");
+            $stmt->bind_param("s", $goal_name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $cars = $result->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+            if ($cars) {
+                $reply = "For $goal_name, I recommend:\n";
+                foreach ($cars as $car) {
+                    $reply .= "- {$car['brand_name']} {$car['name']} ({$car['color']}) - Rp " . number_format($car['price_per_day'], 0, ',', '.') . "/day\n";
+                }
+            } else {
+                $reply = "Sorry, no cars available for $goal_name right now.";
+            }
+            return $reply;
+        }
+    }
+
+    // Color queries
+    $colors = ['merah' => 'Red', 'red' => 'Red', 'hitam' => 'Black', 'black' => 'Black', 
+               'putih' => 'White', 'white' => 'White', 'biru' => 'Blue', 'blue' => 'Blue',
+               'silver' => 'Silver', 'grey' => 'Grey', 'abu' => 'Grey', 'green' => 'Green', 
+               'hijau' => 'Green', 'orange' => 'Orange', 'pink' => 'Pink'];
+    foreach ($colors as $keyword => $color_name) {
+        if (strpos($userMessage, $keyword) !== false) {
+            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day
+                FROM cars c JOIN car_brands cb ON c.brand_id = cb.id 
+                WHERE c.color = ? AND c.is_available = 1 LIMIT 3");
+            $stmt->bind_param("s", $color_name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $cars = $result->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+            if ($cars) {
+                $reply = "Here are our $color_name cars:\n";
+                foreach ($cars as $car) {
+                    $reply .= "- {$car['brand_name']} {$car['name']} - Rp " . number_format($car['price_per_day'], 0, ',', '.') . "/day\n";
+                }
+            } else {
+                $reply = "Sorry, no $color_name cars are currently available.";
+            }
+            return $reply;
+        }
+    }
+
     if (strpos($userMessage, 'keluarga') !== false || strpos($userMessage, 'family') !== false) {
     $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name FROM cars c JOIN car_brands cb ON c.brand_id = cb.id WHERE c.seats >= 7 AND c.is_available = 1 LIMIT 1");
     $stmt->execute();
@@ -282,7 +388,7 @@ function getKeywordResponse($userMessage, $conn) {
         $reply = "We have the " . $car['brand_name'] . " " . $car['name'] . " with manual transmission.";
     }
 } elseif (strpos($userMessage, 'halo') !== false || strpos($userMessage, 'hai') !== false || strpos($userMessage, 'hi') !== false || strpos($userMessage, 'hello') !== false) {
-        $reply = "Hello! I'm your car rental assistant. Ask me about our available cars!";
+        $reply = "Hello! I'm your car rental assistant. Ask me about our available cars, types, colors, or rental purposes!";
     } elseif (strpos($userMessage, 'berapa') !== false || strpos($userMessage, 'price') !== false || strpos($userMessage, 'harga') !== false) {
         $stmt = $conn->prepare("
             SELECT c.name, c.price_per_day, cb.name AS brand_name 
@@ -302,7 +408,7 @@ function getKeywordResponse($userMessage, $conn) {
             foreach ($cars as $car) {
                 $reply .= "- {$car['brand_name']} {$car['name']}: Rp " . number_format($car['price_per_day'], 0, ',', '.') . "/day\n";
                 $count++;
-                if ($count >= 5) break; // Show max 5
+                if ($count >= 5) break;
             }
         }
     } elseif (strpos($userMessage, 'ada apa') !== false || strpos($userMessage, 'available') !== false || strpos($userMessage, 'mobil') !== false) {
@@ -319,7 +425,7 @@ function getKeywordResponse($userMessage, $conn) {
         $stmt->close();
         
         if ($data && $data['count'] > 0) {
-            $reply = "We have {$data['count']} available cars. Type 'price' to see prices or ask about specific features!";
+            $reply = "We have {$data['count']} available cars. Ask about types (SUV, Sedan, EV), colors, purposes (Wedding, Business), or type 'price' to see prices!";
         } else {
             $reply = "No cars are currently available. Please check back later.";
         }

@@ -1,8 +1,9 @@
 <?php
 // Admin Orders List Page
-$page_title = 'Orders Management';
-
 $project_root = dirname(__DIR__);
+if (!session_id()) session_start();
+require_once $project_root . '/includes/language.php';
+$page_title = __('admin_orders_management');
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -93,12 +94,12 @@ $stmt->close();
 <div class="admin-content">
     <div class="content-header d-flex justify-content-between align-items-center">
         <div>
-            <h1><i class="fas fa-shopping-cart"></i> Orders Management</h1>
-            <p>Manage all rental orders.</p>
+            <h1><i class="fas fa-shopping-cart"></i> <?php echo __('admin_orders_management'); ?></h1>
+            <p><?php echo __('admin_manage_orders'); ?></p>
         </div>
         <div>
             <a href="<?php echo SITE_URL; ?>/admin/export-orders.php?status=<?php echo urlencode($status_filter); ?>&format=csv" class="btn btn-success">
-                <i class="fas fa-file-export"></i> Export to CSV
+                <i class="fas fa-file-export"></i> <?php echo __('admin_export_csv'); ?>
             </a>
         </div>
     </div>
@@ -112,7 +113,7 @@ $stmt->close();
                 <div class="card stat-card stat-card-blue">
                     <div class="card-body text-center">
                         <h5 class="text-primary mb-0"><?php echo $total_orders; ?></h5>
-                        <p class="mb-0 small">All Orders</p>
+                        <p class="mb-0 small"><?php echo __('admin_all_orders_count'); ?></p>
                     </div>
                 </div>
             </a>
@@ -122,7 +123,7 @@ $stmt->close();
                 <div class="card stat-card stat-card-orange">
                     <div class="card-body text-center">
                         <h5 class="text-warning mb-0"><?php echo $stats['pending']; ?></h5>
-                        <p class="mb-0 small">Pending</p>
+                        <p class="mb-0 small"><?php echo __('admin_pending'); ?></p>
                     </div>
                 </div>
             </a>
@@ -132,7 +133,7 @@ $stmt->close();
                 <div class="card stat-card stat-card-green">
                     <div class="card-body text-center">
                         <h5 class="text-success mb-0"><?php echo $stats['approved']; ?></h5>
-                        <p class="mb-0 small">Approved</p>
+                        <p class="mb-0 small"><?php echo __('admin_approved'); ?></p>
                     </div>
                 </div>
             </a>
@@ -142,7 +143,7 @@ $stmt->close();
                 <div class="card stat-card stat-card-blue">
                     <div class="card-body text-center">
                         <h5 class="text-info mb-0"><?php echo $stats['completed']; ?></h5>
-                        <p class="mb-0 small">Completed</p>
+                        <p class="mb-0 small"><?php echo __('admin_completed'); ?></p>
                     </div>
                 </div>
             </a>
@@ -155,21 +156,21 @@ $stmt->close();
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Car</th>
-                        <th>Rental Period</th>
-                        <th>Total Price</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Action</th>
+                        <th><?php echo __('admin_order_id'); ?></th>
+                        <th><?php echo __('admin_customer'); ?></th>
+                        <th><?php echo __('admin_car'); ?></th>
+                        <th><?php echo __('admin_rental_period'); ?></th>
+                        <th><?php echo __('admin_total_price'); ?></th>
+                        <th><?php echo __('admin_status'); ?></th>
+                        <th><?php echo __('admin_date'); ?></th>
+                        <th><?php echo __('admin_action'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($orders)): ?>
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox"></i> No orders found
+                                <i class="fas fa-inbox"></i> <?php echo __('admin_no_orders_found'); ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -184,7 +185,7 @@ $stmt->close();
                                 <td>
                                     <?php
                                     echo format_date($order['rental_start_date']) . '<br>' .
-                                        '<small class="text-muted">to ' . format_date($order['rental_end_date']) . '</small>';
+                                        '<small class="text-muted">' . __('admin_to') . ' ' . format_date($order['rental_end_date']) . '</small>';
                                     ?>
                                 </td>
                                 <td><strong><?php echo format_currency($order['total_price']); ?></strong></td>
@@ -193,7 +194,7 @@ $stmt->close();
                                 <td>
                                     <a href="<?php echo SITE_URL; ?>/admin/order-detail.php?id=<?php echo $order['id']; ?>"
                                         class="btn btn-sm btn-primary">
-                                        <i class="fas fa-eye"></i> View
+                                        <i class="fas fa-eye"></i> <?php echo __('admin_view'); ?>
                                     </a>
                                 </td>
                             </tr>

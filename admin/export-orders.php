@@ -80,20 +80,20 @@ if ($format === 'csv') {
     
     // CSV Headers
     fputcsv($output, [
-        'Order ID',
-        'Customer Name',
-        'Customer Email',
-        'Customer Phone',
-        'Car',
-        'Brand',
-        'Order Type',
-        'Start Date',
-        'End Date',
-        'Duration (Days)',
-        'Delivery Option',
-        'Total Price (IDR)',
-        'Status',
-        'Order Date'
+        __('admin_export_order_id'),
+        __('admin_export_customer'),
+        __('admin_export_email'),
+        __('admin_phone'),
+        __('admin_export_car'),
+        __('admin_export_brand'),
+        __('admin_export_order_type'),
+        __('admin_export_start'),
+        __('admin_export_end'),
+        __('admin_duration'),
+        __('admin_delivery_type'),
+        __('admin_export_total'),
+        __('admin_export_status'),
+        __('admin_export_date')
     ]);
     
     // CSV Data

@@ -1,5 +1,7 @@
 <?php
-$page_title = 'Rent Car';
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/language.php';
+$page_title = __('confirm_rental');
 require_once __DIR__ . '/includes/header.php';
 
 require_login();
@@ -24,18 +26,25 @@ if (!$car) {
     set_flash_message('danger', 'Car not found or not available.');
     redirect(SITE_URL . '/cars.php');
 }
+
+// Check if this is the user's first order
+$stmt_first = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND status IN ('approved','completed')");
+$stmt_first->bind_param("i", $_SESSION['user_id']);
+$stmt_first->execute();
+$is_first_order = $stmt_first->get_result()->fetch_assoc()['cnt'] == 0;
+$stmt_first->close();
 ?>
 
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="card-title mb-4"><i class="fas fa-shopping-cart"></i> Confirm Rental</h3>
+                <h3 class="card-title mb-4"><i class="fas fa-shopping-cart"></i> <?php echo __('confirm_rental'); ?></h3>
                 
                 <div class="alert alert-info mb-4">
                     <strong><i class="fas fa-car"></i> <?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></strong><br>
-                    <small><?php echo ucfirst(sanitize_output($car['transmission'])); ?> | <?php echo (int)$car['seats']; ?> Seats</small><br>
-                    <strong class="text-primary"><?php echo format_currency($car['price_per_day']); ?> / day</strong>
+                    <small><?php echo ucfirst(sanitize_output($car['transmission'])); ?> | <?php echo (int)$car['seats']; ?> <?php echo __('seats'); ?></small><br>
+                    <strong class="text-primary"><?php echo format_currency($car['price_per_day']); ?> <?php echo __('per_day'); ?></strong>
                 </div>
 
                 <form action="<?php echo SITE_URL; ?>/api/orders.php" method="POST" id="orderForm">
@@ -44,51 +53,76 @@ if (!$car) {
                     <input type="hidden" id="price_per_day" value="<?php echo (int)$car['price_per_day']; ?>">
 
                     <div class="mb-3">
-                        <label for="rental_start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                        <label for="rental_start_date" class="form-label"><?php echo __('start_date'); ?> <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="rental_start_date" name="rental_start_date" 
                                min="<?php echo date('Y-m-d'); ?>" required>
                     </div>
 
                     <div class="mb-3">
-                        <label for="duration" class="form-label">Duration (Days) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="duration" name="duration_days" min="1" max="30" placeholder="Enter number of days..." required>
+                        <label for="duration" class="form-label"><?php echo __('duration_days'); ?> <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="duration" name="duration_days" min="1" max="30" placeholder="<?php echo __('duration_placeholder'); ?>" required>
                     </div>
 
                     <div class="mb-3">
-                        <label for="delivery_option" class="form-label">Delivery Option</label>
+                        <label for="delivery_option" class="form-label"><?php echo __('delivery_option'); ?></label>
                         <select class="form-select" id="delivery_option" name="delivery_option">
-                            <option value="pickup">Pick up at Showroom</option>
-                            <option value="delivery">Deliver to My Address</option>
+                            <option value="pickup"><?php echo __('pickup_showroom'); ?></option>
+                            <option value="delivery"><?php echo __('deliver_address'); ?></option>
                         </select>
                     </div>
 
                     <div class="mb-3" id="addressField" style="display: none;">
-                        <label for="delivery_address" class="form-label">Delivery Address</label>
-                        <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2" placeholder="Enter your delivery address..."></textarea>
+                        <label for="delivery_address" class="form-label"><?php echo __('delivery_address'); ?></label>
+                        <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2" placeholder="<?php echo __('delivery_addr_placeholder'); ?>"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label for="notes" class="form-label">Notes (Optional)</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any special requests..."></textarea>
+                        <label for="rental_occasion" class="form-label"><?php echo __('rental_occasion'); ?></label>
+                        <select class="form-select" id="rental_occasion" name="rental_occasion">
+                            <option value=""><?php echo __('occasion_placeholder'); ?></option>
+                            <option value="business"><?php echo __('occasion_business'); ?></option>
+                            <option value="family"><?php echo __('occasion_family'); ?></option>
+                            <option value="vacation"><?php echo __('occasion_vacation'); ?></option>
+                            <option value="daily"><?php echo __('occasion_daily'); ?></option>
+                            <option value="other"><?php echo __('occasion_other'); ?></option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label"><?php echo __('notes'); ?></label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="<?php echo __('notes_placeholder'); ?>"></textarea>
+                    </div>
+
+                    <!-- Discount Preview -->
+                    <div id="discountPreview" class="mb-3" style="display:none;">
+                        <div class="alert alert-success py-2 mb-0">
+                            <i class="fas fa-tag"></i> <strong id="discountLabel"></strong>
+                            <span id="discountDesc" class="small"></span>
+                        </div>
                     </div>
 
                     <div class="alert alert-secondary text-center mb-3">
-                        <strong>Estimated Total:</strong> <span class="text-primary fs-5" id="total_display">Rp 0</span>
+                        <div id="originalPriceRow" style="display:none;">
+                            <small class="text-muted"><s id="originalPriceDisplay">Rp 0</s></small><br>
+                        </div>
+                        <strong><?php echo __('estimated_total'); ?>:</strong> <span class="text-primary fs-5" id="total_display">Rp 0</span>
                     </div>
+
+                    <small class="text-muted d-block mb-3"><i class="fas fa-info-circle"></i> <?php echo __('best_discount_note'); ?></small>
 
                     <div class="d-grid gap-2">
                         <button type="submit" name="order_type" value="website" class="btn btn-primary btn-lg">
-                            <i class="fas fa-check"></i> Confirm Order
+                            <i class="fas fa-check"></i> <?php echo __('confirm_order'); ?>
                         </button>
                         <button type="submit" name="order_type" value="whatsapp" class="btn btn-success btn-lg">
-                            <i class="fab fa-whatsapp"></i> Order via WhatsApp
+                            <i class="fab fa-whatsapp"></i> <?php echo __('order_via_wa'); ?>
                         </button>
                     </div>
                 </form>
 
                 <div class="text-center mt-3">
                     <a href="<?php echo SITE_URL; ?>/cars.php" class="text-muted">
-                        <i class="fas fa-arrow-left"></i> Back to Cars
+                        <i class="fas fa-arrow-left"></i> <?php echo __('back_to_cars'); ?>
                     </a>
                 </div>
             </div>
@@ -97,25 +131,88 @@ if (!$car) {
 </div>
 
 <script>
-// Calculate total price
 const durationInput = document.getElementById('duration');
+const startDateInput = document.getElementById('rental_start_date');
+const occasionSelect = document.getElementById('rental_occasion');
 const pricePerDay = parseInt(document.getElementById('price_per_day').value);
 const totalDisplay = document.getElementById('total_display');
+const originalPriceDisplay = document.getElementById('originalPriceDisplay');
+const originalPriceRow = document.getElementById('originalPriceRow');
+const discountPreview = document.getElementById('discountPreview');
+const discountLabel = document.getElementById('discountLabel');
+const discountDesc = document.getElementById('discountDesc');
+const isFirstOrder = <?php echo $is_first_order ? 'true' : 'false'; ?>;
 
-durationInput.addEventListener('input', function() {
-    const days = parseInt(durationInput.value) || 0;
-    if (days > 0) {
-        const total = days * pricePerDay;
-        totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
-    } else {
-        totalDisplay.innerText = 'Rp 0';
+const discountDefs = {
+    weekend:    { pct: 25, label: '<?php echo __("discount_weekend"); ?>', desc: '<?php echo __("discount_weekend_desc"); ?>' },
+    first_order:{ pct: 15, label: '<?php echo __("discount_first_order"); ?>', desc: '<?php echo __("discount_first_order_desc"); ?>' },
+    long_rental:{ pct: 20, label: '<?php echo __("discount_long_rental"); ?>', desc: '<?php echo __("discount_long_rental_desc"); ?>' },
+    family:     { pct: 10, label: '<?php echo __("discount_family"); ?>', desc: '<?php echo __("discount_family_desc"); ?>' }
+};
+
+function isAllWeekend(startDate, days) {
+    if (!startDate || days < 1) return false;
+    var d = new Date(startDate + 'T00:00:00');
+    for (var i = 0; i < days; i++) {
+        var day = d.getDay();
+        if (day !== 0 && day !== 6) return false;
+        d.setDate(d.getDate() + 1);
     }
-});
+    return true;
+}
+
+function calcDiscount() {
+    var days = parseInt(durationInput.value) || 0;
+    var startDate = startDateInput.value;
+    var occasion = occasionSelect.value;
+    if (days < 1) {
+        totalDisplay.innerText = 'Rp 0';
+        originalPriceRow.style.display = 'none';
+        discountPreview.style.display = 'none';
+        return;
+    }
+    var originalTotal = days * pricePerDay;
+    var bestKey = null, bestPct = 0;
+
+    // Check weekend discount
+    if (startDate && isAllWeekend(startDate, days)) {
+        bestKey = 'weekend'; bestPct = 25;
+    }
+    // Check long rental
+    if (days >= 7 && discountDefs.long_rental.pct > bestPct) {
+        bestKey = 'long_rental'; bestPct = 20;
+    }
+    // Check first order
+    if (isFirstOrder && discountDefs.first_order.pct > bestPct) {
+        bestKey = 'first_order'; bestPct = 15;
+    }
+    // Check family package
+    if (occasion === 'family' && discountDefs.family.pct > bestPct) {
+        bestKey = 'family'; bestPct = 10;
+    }
+
+    if (bestKey) {
+        var discounted = Math.round(originalTotal * (1 - bestPct / 100));
+        totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(discounted);
+        originalPriceDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
+        originalPriceRow.style.display = '';
+        discountLabel.innerText = discountDefs[bestKey].label + ' (-' + bestPct + '%)';
+        discountDesc.innerText = ' — ' + discountDefs[bestKey].desc;
+        discountPreview.style.display = '';
+    } else {
+        totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
+        originalPriceRow.style.display = 'none';
+        discountPreview.style.display = 'none';
+    }
+}
+
+durationInput.addEventListener('input', calcDiscount);
+startDateInput.addEventListener('change', calcDiscount);
+occasionSelect.addEventListener('change', calcDiscount);
 
 // Show/hide delivery address field
 const deliveryOption = document.getElementById('delivery_option');
 const addressField = document.getElementById('addressField');
-
 deliveryOption.addEventListener('change', function() {
     addressField.style.display = this.value === 'delivery' ? 'block' : 'none';
 });

@@ -1,8 +1,9 @@
 <?php
 // Admin Settings & Profile Page
-$page_title = 'Admin Settings';
-
 $project_root = dirname(__DIR__);
+if (!session_id()) session_start();
+require_once $project_root . '/includes/language.php';
+$page_title = __('admin_settings');
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -74,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['type'])) {
             $whatsapp = trim($_POST['whatsapp_number'] ?? '');
             $admin_email = trim($_POST['admin_email'] ?? '');
             $gemini_key = trim($_POST['gemini_api_key'] ?? '');
+            $midtrans_client = trim($_POST['midtrans_client_key'] ?? '');
+            $midtrans_server = trim($_POST['midtrans_server_key'] ?? '');
             
             // Update site settings
             $stmt = $conn->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
@@ -90,6 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['type'])) {
             $key = 'gemini_api_key';
             $stmt->execute();
             
+            $stmt->bind_param("sss", $key, $midtrans_client, $midtrans_client);
+            $key = 'midtrans_client_key';
+            $stmt->execute();
+            
+            $stmt->bind_param("sss", $key, $midtrans_server, $midtrans_server);
+            $key = 'midtrans_server_key';
+            $stmt->execute();
+            
             $stmt->close();
             
             $success_message = 'Site settings updated successfully!';
@@ -102,7 +113,7 @@ $csrf_token = generate_csrf_token();
 
 <div class="admin-content">
     <div class="content-header">
-        <h1><i class="fas fa-cog"></i> Settings</h1>
+        <h1><i class="fas fa-cog"></i> <?php echo __('admin_settings'); ?></h1>
         <p>Manage your admin account and site settings.</p>
     </div>
 
@@ -126,17 +137,17 @@ $csrf_token = generate_csrf_token();
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
-                <i class="fas fa-user-circle"></i> Profile
+                <i class="fas fa-user-circle"></i> <?php echo __('admin_profile_info'); ?>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
-                <i class="fas fa-lock"></i> Change Password
+                <i class="fas fa-lock"></i> <?php echo __('admin_change_password'); ?>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="site-tab" data-bs-toggle="tab" data-bs-target="#site" type="button" role="tab">
-                <i class="fas fa-cogs"></i> Site Settings
+                <i class="fas fa-cogs"></i> <?php echo __('admin_site_config'); ?>
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -154,33 +165,33 @@ $csrf_token = generate_csrf_token();
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="fas fa-user-edit"></i> Admin Profile Information</h5>
+                            <h5 class="mb-0"><i class="fas fa-user-edit"></i> <?php echo __('admin_profile_info'); ?></h5>
                         </div>
                         <div class="card-body">
                             <form method="POST">
                                 <input type="hidden" name="type" value="profile">
 
                                 <div class="mb-3">
-                                    <label for="name" class="form-label">Full Name *</label>
+                                    <label for="name" class="form-label"><?php echo __('admin_full_name'); ?> *</label>
                                     <input type="text" class="form-control" id="name" name="name"
                                         value="<?php echo sanitize_output($admin_data['name'] ?? ''); ?>" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="email" class="form-label">Email (Read-only)</label>
+                                    <label for="email" class="form-label"><?php echo __('admin_email_readonly'); ?></label>
                                     <input type="email" class="form-control" id="email" disabled
                                         value="<?php echo sanitize_output($admin_data['email'] ?? ''); ?>">
                                     <small class="text-muted">Email cannot be changed.</small>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="phone" class="form-label">Phone</label>
+                                    <label for="phone" class="form-label"><?php echo __('admin_phone_label'); ?></label>
                                     <input type="tel" class="form-control" id="phone" name="phone"
                                         value="<?php echo sanitize_output($admin_data['phone'] ?? ''); ?>">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="address" class="form-label">Address</label>
+                                    <label for="address" class="form-label"><?php echo __('admin_address_label'); ?></label>
                                     <textarea class="form-control" id="address" name="address" rows="3"><?php echo sanitize_output($admin_data['address'] ?? ''); ?></textarea>
                                 </div>
 
@@ -192,7 +203,7 @@ $csrf_token = generate_csrf_token();
                                 <?php echo csrf_input_field(); ?>
 
                                 <button type="submit" name="profile_submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Save Changes
+                                    <i class="fas fa-save"></i> <?php echo __('admin_save_profile'); ?>
                                 </button>
                             </form>
                         </div>
@@ -207,7 +218,7 @@ $csrf_token = generate_csrf_token();
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="fas fa-key"></i> Change Password</h5>
+                            <h5 class="mb-0"><i class="fas fa-key"></i> <?php echo __('admin_change_password'); ?></h5>
                         </div>
                         <div class="card-body">
                             <form method="POST">
@@ -219,25 +230,25 @@ $csrf_token = generate_csrf_token();
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="current_password" class="form-label">Current Password *</label>
+                                    <label for="current_password" class="form-label"><?php echo __('admin_current_password'); ?> *</label>
                                     <input type="password" class="form-control" id="current_password" name="current_password" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="new_password" class="form-label">New Password *</label>
+                                    <label for="new_password" class="form-label"><?php echo __('admin_new_password'); ?> *</label>
                                     <input type="password" class="form-control" id="new_password" name="new_password"
                                         placeholder="Minimum 6 characters" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="confirm_password" class="form-label">Confirm New Password *</label>
+                                    <label for="confirm_password" class="form-label"><?php echo __('admin_confirm_password'); ?> *</label>
                                     <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                                 </div>
 
                                 <?php echo csrf_input_field(); ?>
 
                                 <button type="submit" name="password_submit" class="btn btn-primary">
-                                    <i class="fas fa-check"></i> Update Password
+                                    <i class="fas fa-check"></i> <?php echo __('admin_update_password'); ?>
                                 </button>
                             </form>
                         </div>
@@ -252,14 +263,14 @@ $csrf_token = generate_csrf_token();
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="fas fa-cogs"></i> Site Configuration</h5>
+                            <h5 class="mb-0"><i class="fas fa-cogs"></i> <?php echo __('admin_site_config'); ?></h5>
                         </div>
                         <div class="card-body">
                             <form method="POST">
                                 <input type="hidden" name="type" value="site">
 
                                 <div class="mb-3">
-                                    <label for="whatsapp_number" class="form-label">WhatsApp Number</label>
+                                    <label for="whatsapp_number" class="form-label"><?php echo __('admin_whatsapp'); ?></label>
                                     <input type="text" class="form-control" id="whatsapp_number" name="whatsapp_number"
                                         value="<?php echo sanitize_output(get_site_setting('whatsapp_number') ?? ''); ?>"
                                         placeholder="6281234567890">
@@ -267,7 +278,7 @@ $csrf_token = generate_csrf_token();
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="admin_email" class="form-label">Admin Email</label>
+                                    <label for="admin_email" class="form-label"><?php echo __('admin_admin_email'); ?></label>
                                     <input type="email" class="form-control" id="admin_email" name="admin_email"
                                         value="<?php echo sanitize_output(get_site_setting('admin_email') ?? ''); ?>"
                                         placeholder="admin@example.com">
@@ -276,7 +287,7 @@ $csrf_token = generate_csrf_token();
 
                                 <hr>
 
-                                <h6 class="mb-3"><i class="fas fa-robot"></i> AI Chat Configuration</h6>
+                                <h6 class="mb-3"><i class="fas fa-robot"></i> <?php echo __('admin_ai_config'); ?></h6>
                                 
                                 <div class="alert alert-info" role="alert">
                                     <i class="fas fa-info-circle"></i>
@@ -302,10 +313,43 @@ $csrf_token = generate_csrf_token();
                                     </small>
                                 </div>
 
+                                <hr>
+
+                                <h6 class="mb-3"><i class="fas fa-credit-card"></i> <?php echo __('admin_midtrans_config'); ?></h6>
+                                
+                                <div class="alert alert-info" role="alert">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Midtrans Sandbox (Testing)</strong><br>
+                                    Get your sandbox keys from: <a href="https://dashboard.sandbox.midtrans.com/settings/config_info" target="_blank">Midtrans Dashboard</a><br>
+                                    <small class="text-muted">Leave empty to use payment simulator mode</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="midtrans_client_key" class="form-label">Midtrans Client Key</label>
+                                    <input type="text" class="form-control font-monospace" id="midtrans_client_key" name="midtrans_client_key"
+                                        value="<?php echo sanitize_output(get_site_setting('midtrans_client_key') ?? ''); ?>"
+                                        placeholder="SB-Mid-client-...">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="midtrans_server_key" class="form-label">Midtrans Server Key</label>
+                                    <input type="text" class="form-control font-monospace" id="midtrans_server_key" name="midtrans_server_key"
+                                        value="<?php echo sanitize_output(get_site_setting('midtrans_server_key') ?? ''); ?>"
+                                        placeholder="SB-Mid-server-...">
+                                    <small class="text-muted">
+                                        Status: 
+                                        <?php if (!empty(get_site_setting('midtrans_server_key'))): ?>
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> Configured (Midtrans payment enabled)</span>
+                                        <?php else: ?>
+                                            <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Not configured (using payment simulator)</span>
+                                        <?php endif; ?>
+                                    </small>
+                                </div>
+
                                 <?php echo csrf_input_field(); ?>
 
                                 <button type="submit" name="site_submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Save Settings
+                                    <i class="fas fa-save"></i> <?php echo __('admin_save_site_config'); ?>
                                 </button>
                             </form>
                         </div>
@@ -326,7 +370,7 @@ $csrf_token = generate_csrf_token();
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label text-muted">Site Name</label>
-                                    <p><strong><?php echo SITE_NAME; ?></strong></p>
+                                    <p><strong class="brand-text"><?php echo SITE_NAME; ?></strong></p>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label text-muted">Site URL</label>

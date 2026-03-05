@@ -54,17 +54,17 @@ git clone https://github.com/your-username/NusantaraRentalCar.git
 
 ### 2. Database Setup
 
-1. Create a MySQL database named `nusantara_rental_car`
-2. Import the database schema:
+Import the database (it will auto-create the database):
 
 ```bash
-mysql -u root -p nusantara_rental_car < database/database.sql
+mysql -u root < database/nusantara_rental_car.sql
 ```
 
 Or import via phpMyAdmin:
 - Open phpMyAdmin
-- Create database `nusantara_rental_car`
-- Import `database/database.sql`
+- Click **Import** tab
+- Select `database/nusantara_rental_car.sql`
+- Click **Go** (the database will be created automatically)
 
 ### 3. Configuration
 
@@ -134,7 +134,7 @@ NusantaraRentalCar/
 │   ├── config.php          # Site configuration
 │   └── database.php        # Database connection
 ├── database/               # Database files
-│   └── database.sql        # Database schema
+│   └── nusantara_rental_car.sql  # Complete database (tables + data)
 ├── includes/               # Shared PHP includes
 │   ├── auth.php            # Authentication functions
 │   ├── email.php           # Email functions (PHPMailer)

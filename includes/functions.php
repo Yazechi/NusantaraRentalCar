@@ -45,7 +45,21 @@ function get_site_setting($key) {
 }
 
 function format_currency($amount) {
-    return 'Rp ' . number_format($amount, 0, ',', '.');
+    return 'Rp ' . number_format((float)($amount ?? 0), 0, ',', '.');
+}
+
+function format_fuel_type($fuel_type) {
+    $map = [
+        'pertalite' => 'Pertalite',
+        'pertamax' => 'Pertamax',
+        'pertamax_turbo' => 'Pertamax Turbo',
+        'solar' => 'Solar',
+        'dexlite' => 'Dexlite',
+        'pertamina_dex' => 'Pertamina Dex',
+        'hybrid' => 'Hybrid',
+        'electric' => 'Electric',
+    ];
+    return $map[$fuel_type] ?? ucfirst($fuel_type);
 }
 
 function format_date($date) {

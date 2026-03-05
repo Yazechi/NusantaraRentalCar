@@ -83,7 +83,7 @@ function send_email_simple($to, $to_name, $subject, $body, $is_html = true) {
 function send_order_notification_admin($order_id, $user_name, $car_name, $total_price) {
     $admin_email = 'admin@nusantararental.com'; // Update with real admin email
     
-    $subject = "New Order #$order_id - Nusantara Rental Car";
+    $subject = "New Order #$order_id - MeTrev Rental Mobil";
     
     $body = get_email_template('order_admin', [
         'order_id' => $order_id,
@@ -100,7 +100,7 @@ function send_order_notification_admin($order_id, $user_name, $car_name, $total_
  * Send order confirmation to user
  */
 function send_order_confirmation_user($email, $user_name, $order_id, $car_name, $rental_start, $rental_end, $total_price) {
-    $subject = "Order Confirmation #$order_id - Nusantara Rental Car";
+    $subject = "Order Confirmation #$order_id - MeTrev Rental Mobil";
     
     $body = get_email_template('order_user', [
         'user_name' => $user_name,
@@ -120,7 +120,7 @@ function send_order_confirmation_user($email, $user_name, $order_id, $car_name, 
  */
 function send_order_status_update($email, $user_name, $order_id, $status, $car_name) {
     $status_text = ucfirst($status);
-    $subject = "Order #$order_id $status_text - Nusantara Rental Car";
+    $subject = "Order #$order_id $status_text - MeTrev Rental Mobil";
     
     $body = get_email_template('order_status', [
         'user_name' => $user_name,
@@ -137,7 +137,7 @@ function send_order_status_update($email, $user_name, $order_id, $status, $car_n
  * Send password reset email
  */
 function send_password_reset_email($email, $user_name, $reset_token) {
-    $subject = "Password Reset Request - Nusantara Rental Car";
+    $subject = "Password Reset Request - MeTrev Rental Mobil";
     
     $reset_link = SITE_URL . '/reset-password.php?token=' . $reset_token;
     
@@ -153,7 +153,7 @@ function send_password_reset_email($email, $user_name, $reset_token) {
  * Send email verification
  */
 function send_verification_email($email, $user_name, $verification_token) {
-    $subject = "Verify Your Email - Nusantara Rental Car";
+    $subject = "Verify Your Email - MeTrev Rental Mobil";
     
     $verification_link = SITE_URL . '/verify-email.php?token=' . $verification_token;
     
@@ -242,7 +242,7 @@ function get_email_template($template_name, $data = []) {
         'email_verification' => '
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa;">
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                    <h1 style="color: white; margin: 0;">Welcome to Nusantara Rental Car!</h1>
+                    <h1 style="color: white; margin: 0;">Welcome to MeTrev Rental Mobil!</h1>
                 </div>
                 <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px;">
                     <p>Hi ' . $data['user_name'] . ',</p>
