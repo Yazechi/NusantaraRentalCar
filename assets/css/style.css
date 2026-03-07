@@ -1090,7 +1090,7 @@ footer { margin-top: auto; }
 
 /* ============ Footer ============ */
 .site-footer {
-    background: linear-gradient(180deg, #1e2a3a 0%, #162030 100%);
+    background: linear-gradient(180deg, #243245 0%, #1c2738 100%);
     color: rgba(255,255,255,0.82);
     padding: 70px 0 0;
     margin-top: 4rem;
@@ -1237,15 +1237,11 @@ footer { margin-top: auto; }
 
 .partner-logos img {
     width: 72px; height: 36px;
-    opacity: 0.5;
-    filter: grayscale(100%) brightness(3);
     transition: var(--transition-fast);
     object-fit: contain;
 }
 
 .partner-logos img:hover {
-    opacity: 0.9;
-    filter: grayscale(0%);
     transform: scale(1.08);
 }
 

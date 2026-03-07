@@ -14,6 +14,7 @@ if (!$car_id) {
 // Use prepared statement to prevent SQL injection
 $stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT GROUP_CONCAT(cs.plate_number SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count
         FROM cars c
@@ -136,17 +137,39 @@ $available_stock = (int)$car['available_stock'];
             <!-- Features -->
             <div class="bg-light p-3 rounded mb-4">
                 <div class="row text-center g-2">
-                    <div class="col-4 border-end">
+                    <div class="col border-end px-1">
                         <i class="fas fa-users text-muted mb-1"></i>
                         <div class="small fw-bold"><?php echo (int)$car['seats']; ?> Seats</div>
                     </div>
-                    <div class="col-4 border-end">
+                    <div class="col border-end px-1">
                         <i class="fas fa-cog text-muted mb-1"></i>
                         <div class="small fw-bold"><?php echo ucfirst(sanitize_output($car['transmission'])); ?></div>
                     </div>
-                    <div class="col-4">
+                    <div class="col border-end px-1">
                         <i class="fas fa-gas-pump text-muted mb-1"></i>
                         <div class="small fw-bold">Pertamax</div>
+                    </div>
+                    <div class="col border-end px-1">
+                        <i class="fas fa-palette text-muted mb-1"></i>
+                        <div class="small fw-bold text-truncate" title="<?php echo sanitize_output($car['color'] ?? 'N/A'); ?>"><?php echo sanitize_output($car['color'] ?? 'N/A'); ?></div>
+                    </div>
+                    <div class="col px-1">
+                        <i class="fas fa-id-card text-muted mb-1"></i>
+                        <div class="small fw-bold">
+                            <?php 
+                            $plates = !empty($car['plates']) ? array_map('trim', explode(',', $car['plates'])) : [];
+                            if (count($plates) > 1): ?>
+                                <select class="form-select form-select-sm border-0 bg-transparent text-center fw-bold p-0 mx-auto" style="width: auto; cursor:pointer; box-shadow: none; display:inline-block; font-size: inherit; background-position: right 0 center; padding-right: 1.2rem !important;">
+                                    <?php foreach ($plates as $p): ?>
+                                        <option><?php echo sanitize_output($p); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php elseif (count($plates) == 1): ?>
+                                <?php echo sanitize_output($plates[0]); ?>
+                            <?php else: ?>
+                                N/A
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>

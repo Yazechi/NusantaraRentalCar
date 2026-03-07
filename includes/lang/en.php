@@ -231,10 +231,17 @@ return [
     'admin_orders_management' => 'Orders Management',
     'admin_all_orders' => 'All Orders',
     'admin_users' => 'Users',
+    'admin_support_interaction' => 'Support & Interaction',
+    'admin_emergency_sos' => 'Emergency SOS',
+    'admin_user_feedback' => 'User Feedback',
+    'admin_car_reviews' => 'Car Reviews',
     'admin_settings' => 'Settings',
     'admin_profile_settings' => 'Profile Settings',
     'admin_logout' => 'Logout',
     'admin_total_cars' => 'Total Cars',
+
+    // Car Types
+    'type_sports_car' => 'Sports Car',
     'admin_total_stock' => 'Total Stock',
     'admin_total_orders' => 'Total Orders',
     'admin_total_users' => 'Total Users',

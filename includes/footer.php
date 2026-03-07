@@ -36,7 +36,7 @@
                 <div class="col-lg-4 col-md-6">
                     <h6 class="footer-heading"><?php echo __('contact_us'); ?></h6>
                     <ul class="footer-contact">
-                        <li><i class="fas fa-map-marker-alt"></i> <?php echo sanitize_output(get_site_setting('site_address') ?? 'Jakarta, Indonesia'); ?></li>
+                        <li><i class="fas fa-map-marker-alt"></i> <?php echo sanitize_output(get_site_setting('site_address') ?? 'Medan, Indonesia'); ?></li>
                         <li><i class="fab fa-whatsapp"></i> +<?php echo sanitize_output(get_site_setting('whatsapp_number') ?? '6281234567890'); ?></li>
                     </ul>
                 </div>

@@ -535,31 +535,11 @@ $returned_cars_list = $conn->query("
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i><?php echo __('admin_revenue_7days'); ?></h6>
+                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i><?php echo __('admin_revenue_7days'); ?></h6>
                 </div>
                 <div class="card-body">
-                    <div class="revenue-chart">
-                        <?php 
-                        $max_rev = max(array_column($revenue_7days, 'total'));
-                        if ($max_rev == 0) $max_rev = 1;
-                        foreach ($revenue_7days as $day): 
-                            $height_pct = max(3, ($day['total'] / $max_rev) * 100);
-                            $day_total = (float)($day['total'] ?? 0);
-                        ?>
-                        <div class="chart-bar-wrapper">
-                            <div class="chart-bar-value"><?php 
-                            if ($day_total > 0) {
-                                $lang = $_SESSION['lang'] ?? 'id';
-                                $suffix = ($lang === 'id') ? __('admin_juta_short') : __('admin_million_short');
-                                echo number_format($day_total / 1000000, 1) . $suffix;
-                            } else { echo '-'; }
-                            ?></div>
-                            <div class="chart-bar-track">
-                                <div class="chart-bar-fill" style="height:<?php echo $height_pct; ?>%"></div>
-                            </div>
-                            <div class="chart-bar-label"><?php echo $day['date']; ?></div>
-                        </div>
-                        <?php endforeach; ?>
+                    <div class="dash-chart-wrap" style="height: 300px; width: 100%; position: relative;">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -576,34 +556,34 @@ $returned_cars_list = $conn->query("
                 <div class="card-body">
                     <?php 
                     $status_config = [
-                        'pending' => ['color' => '#f59e0b', 'icon' => 'clock'],
-                        'approved' => ['color' => '#10b981', 'icon' => 'check-circle'],
-                        'completed' => ['color' => '#06b6d4', 'icon' => 'flag-checkered'],
-                        'cancelled' => ['color' => '#ef4444', 'icon' => 'times-circle']
+                        'pending' => ['color' => '#f59e0b', 'label' => 'Pending'],
+                        'approved' => ['color' => '#10b981', 'label' => 'Approved'],
+                        'completed' => ['color' => '#06b6d4', 'label' => 'Completed'],
+                        'cancelled' => ['color' => '#ef4444', 'label' => 'Cancelled']
                     ];
-                    $total_for_pct = max(array_sum($order_statuses), 1);
                     ?>
-                    <!-- Stacked bar -->
-                    <div class="status-stacked-bar mb-3">
-                        <?php foreach ($status_config as $status => $cfg):
+                    <div class="dash-donut-wrap" style="height: 200px; position: relative;">
+                        <canvas id="statusChart"></canvas>
+                        <div class="donut-center-label">
+                            <span class="donut-total"><?php echo array_sum($order_statuses); ?></span>
+                            <span class="donut-total-label">Orders</span>
+                        </div>
+                    </div>
+                    <ul class="dash-status-legend mt-4">
+                        <?php 
+                        $total_for_pct = max(array_sum($order_statuses), 1);
+                        foreach ($status_config as $status => $cfg):
                             $count = $order_statuses[$status] ?? 0;
                             $pct = round(($count / $total_for_pct) * 100);
-                            if ($pct > 0):
                         ?>
-                        <div class="status-bar-segment" style="width:<?php echo $pct; ?>%;background:<?php echo $cfg['color']; ?>" title="<?php echo ucfirst($status); ?>: <?php echo $count; ?>"></div>
-                        <?php endif; endforeach; ?>
-                    </div>
-                    <?php foreach ($status_config as $status => $cfg):
-                        $count = $order_statuses[$status] ?? 0;
-                        $pct = round(($count / $total_for_pct) * 100);
-                    ?>
-                    <div class="status-row">
-                        <div class="status-dot" style="background:<?php echo $cfg['color']; ?>"></div>
-                        <span class="status-name"><?php echo ucfirst($status); ?></span>
-                        <span class="status-count"><?php echo $count; ?></span>
-                        <span class="status-pct"><?php echo $pct; ?>%</span>
-                    </div>
-                    <?php endforeach; ?>
+                        <li>
+                            <div class="legend-dot" style="background:<?php echo $cfg['color']; ?>"></div>
+                            <div class="legend-label"><?php echo $cfg['label']; ?></div>
+                            <div class="legend-count"><?php echo $count; ?></div>
+                            <div class="legend-pct"><?php echo $pct; ?>%</div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -709,5 +689,126 @@ $returned_cars_list = $conn->query("
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Data for Revenue Chart
+    const revenueLabels = <?php echo json_encode(array_column($revenue_7days, 'date')); ?>;
+    const revenueData = <?php echo json_encode(array_column($revenue_7days, 'total')); ?>;
+
+    // Chart.js default defaults for dark theme
+    Chart.defaults.color = '#b8c4d0';
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+    // Revenue Chart (Line or Bar)
+    const ctxRev = document.getElementById('revenueChart');
+    if (ctxRev) {
+        new Chart(ctxRev, {
+            type: 'line',
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData,
+                    borderColor: '#c9a84c',
+                    backgroundColor: 'rgba(201, 168, 76, 0.2)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#c9a84c',
+                    pointBorderColor: '#16161f',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c1c28',
+                        titleColor: '#eef2f7',
+                        bodyColor: '#b8c4d0',
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.parsed.y;
+                                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: { color: '#7a8899' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: {
+                            color: '#7a8899',
+                            callback: function(value) {
+                                if (value >= 1000000) {
+                                    return (value / 1000000) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000) + 'k';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Data for Status Chart
+    const statusCounts = [
+        <?php echo $order_statuses['pending'] ?? 0; ?>,
+        <?php echo $order_statuses['approved'] ?? 0; ?>,
+        <?php echo $order_statuses['completed'] ?? 0; ?>,
+        <?php echo $order_statuses['cancelled'] ?? 0; ?>
+    ];
+    
+    // Status Chart (Doughnut)
+    const ctxStat = document.getElementById('statusChart');
+    if (ctxStat) {
+        new Chart(ctxStat, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Approved', 'Completed', 'Cancelled'],
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: ['#f59e0b', '#10b981', '#06b6d4', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c1c28',
+                        titleColor: '#eef2f7',
+                        bodyColor: '#b8c4d0',
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

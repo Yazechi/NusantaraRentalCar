@@ -231,10 +231,17 @@ return [
     'admin_orders_management' => 'Manajemen Pesanan',
     'admin_all_orders' => 'Semua Pesanan',
     'admin_users' => 'Pengguna',
+    'admin_support_interaction' => 'Dukungan & Interaksi',
+    'admin_emergency_sos' => 'Darurat SOS',
+    'admin_user_feedback' => 'Masukan Pengguna',
+    'admin_car_reviews' => 'Ulasan Mobil',
     'admin_settings' => 'Pengaturan',
     'admin_profile_settings' => 'Pengaturan Profil',
     'admin_logout' => 'Keluar',
     'admin_total_cars' => 'Total Mobil',
+
+    // Car Types
+    'type_sports_car' => 'Mobil Sport',
     'admin_total_stock' => 'Total Stok',
     'admin_total_orders' => 'Total Pesanan',
     'admin_total_users' => 'Total Pengguna',

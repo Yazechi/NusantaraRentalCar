@@ -99,6 +99,20 @@ function renderCars(cars) {
                 starsHtml = `<div class="text-muted mb-2 small"><i class="far fa-star me-1"></i>New Car</div>`;
             }
 
+            // Plates display logic
+            let platesHtml = '';
+            if (car.plates) {
+                const plateList = car.plates.split(',').map(p => p.trim());
+                if (plateList.length > 1) {
+                    const options = plateList.map(p => `<option>${p}</option>`).join('');
+                    platesHtml = `<i class="fas fa-id-card me-1"></i><select class="form-select form-select-sm d-inline-block border-0 bg-transparent text-muted p-0 pe-4" style="width: auto; cursor: pointer; font-size: inherit; box-shadow: none; vertical-align: baseline;">${options}</select>`;
+                } else {
+                    platesHtml = `<i class="fas fa-id-card me-1"></i>${plateList[0]}`;
+                }
+            } else {
+                platesHtml = `<i class="fas fa-id-card me-1"></i>N/A`;
+            }
+
             html += `
             <div class="col-md-4 mb-4">
                 <div class="deal-card h-100 shadow-sm ${!isAvailable ? 'opacity-75' : ''}">
@@ -117,7 +131,8 @@ function renderCars(cars) {
                                 <i class="fas fa-cog me-1"></i>${car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)} |
                                 <i class="fas fa-users ms-2 me-1"></i>${car.seats} seats |
                                 ${car.type_name ? '<i class="fas fa-car-side me-1"></i>' + car.type_name + ' | ' : ''}
-                                ${car.color ? '<i class="fas fa-palette me-1"></i>' + car.color : ''}
+                                ${car.color ? '<i class="fas fa-palette me-1"></i>' + car.color + ' | ' : ''}
+                                ${platesHtml}
                             </small>
                         </p>
                         <p class="mb-3">${priceHtml}</p>

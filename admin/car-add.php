@@ -176,9 +176,13 @@ $csrf_token = generate_csrf_token();
                         <label for="type_id" class="form-label"><?php echo __('admin_car_type'); ?></label>
                         <select class="form-select" id="type_id" name="type_id">
                             <option value=""><?php echo __('admin_select_type'); ?></option>
-                            <?php foreach ($car_types as $type): ?>
+                            <?php foreach ($car_types as $type): 
+                                $type_lang_key = 'type_' . strtolower(str_replace([' ', '-'], '_', $type['name']));
+                                $translated_type = __($type_lang_key);
+                                $type_name_display = ($translated_type !== $type_lang_key) ? $translated_type : $type['name'];
+                            ?>
                                 <option value="<?php echo $type['id']; ?>">
-                                    <?php echo sanitize_output($type['name']); ?>
+                                    <?php echo sanitize_output($type_name_display); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
