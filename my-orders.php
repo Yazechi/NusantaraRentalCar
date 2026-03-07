@@ -9,7 +9,8 @@ require_login();
 $user_id = $_SESSION['user_id'];
 
 // Get user's orders using prepared statement
-$stmt = $conn->prepare("SELECT orders.*, cars.name AS car_name, cars.price_per_day, cb.name AS brand_name, cs.plate_number
+$stmt = $conn->prepare("SELECT orders.*, cars.name AS car_name, cars.price_per_day, cb.name AS brand_name, cs.plate_number,
+        (SELECT id FROM car_reviews WHERE order_id = orders.id LIMIT 1) as review_id
         FROM orders 
         JOIN cars ON orders.car_id = cars.id 
         JOIN car_brands cb ON cars.brand_id = cb.id
@@ -94,6 +95,24 @@ $stmt->close();
                                     <i class="fas fa-credit-card"></i>
                                 </a>
                                 <?php endif; ?>
+                                
+                                <?php if ($order['status'] === 'approved'): ?>
+                                <button type="button" class="btn btn-danger" onclick="openSOSModal(<?php echo (int)$order['id']; ?>, '<?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?>')" title="<?php echo __('emergency_sos'); ?>">
+                                    <i class="fas fa-ambulance"></i> SOS
+                                </button>
+                                <?php endif; ?>
+
+                                <?php if ($order['status'] === 'completed'): ?>
+                                    <?php if ($order['review_id']): ?>
+                                    <button class="btn btn-secondary" title="<?php echo __('already_reviewed'); ?>" disabled>
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                    <?php else: ?>
+                                    <a href="<?php echo SITE_URL; ?>/review.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-warning" title="<?php echo __('rate_and_review'); ?>">
+                                        <i class="fas fa-star"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -109,5 +128,46 @@ $stmt->close();
         </a>
     </div>
 <?php endif; ?>
+
+<!-- SOS Modal -->
+<div class="modal fade" id="sosModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-ambulance me-2"></i> <?php echo __('emergency_sos_help'); ?></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="<?php echo SITE_URL; ?>/api/emergency.php" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" id="sos_order_id">
+                    <p><?php echo __('requesting_assistance_for'); ?> <strong id="sos_car_name"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label"><?php echo __('current_location_details'); ?></label>
+                        <textarea name="location_details" class="form-control" placeholder="<?php echo __('location_placeholder'); ?>" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><?php echo __('problem_description'); ?></label>
+                        <textarea name="message" class="form-control" placeholder="<?php echo __('problem_placeholder'); ?>" required></textarea>
+                    </div>
+                    <div class="alert alert-warning small">
+                        <i class="fas fa-info-circle me-1"></i> <?php echo __('sos_admin_note'); ?>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('cancel'); ?></button>
+                    <button type="submit" class="btn btn-danger px-4"><?php echo __('send_sos_request'); ?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openSOSModal(orderId, carName) {
+    document.getElementById('sos_order_id').value = orderId;
+    document.getElementById('sos_car_name').innerText = carName;
+    new bootstrap.Modal(document.getElementById('sosModal')).show();
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

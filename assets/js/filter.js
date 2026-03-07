@@ -22,6 +22,8 @@ function applyFilter() {
     filterTimeout = setTimeout(() => {
         const form = document.getElementById("filterForm");
         const params = new URLSearchParams(new FormData(form));
+        // Add cache busting
+        params.append('_t', new Date().getTime());
         
         // Create new AbortController for this request
         currentController = new AbortController();
@@ -78,29 +80,48 @@ function renderCars(cars) {
                 ? `<span class="price-original">Rp ${new Intl.NumberFormat('id-ID').format(originalPrice)}</span> <span class="price-discounted">Rp ${new Intl.NumberFormat('id-ID').format(discountedPrice)}</span> <small class="text-muted fw-normal">/ day</small>`
                 : `<span class="price-normal">Rp ${new Intl.NumberFormat('id-ID').format(originalPrice)}</span> <small class="text-muted fw-normal">/ day</small>`;
             
+            const isAvailable = parseInt(car.available_stock) > 0;
+            const availabilityBadge = isAvailable 
+                ? `<span class="badge bg-success shadow-sm"><i class="fas fa-check-circle me-1"></i>${lang.available}</span>`
+                : `<span class="badge bg-danger shadow-sm"><i class="fas fa-times-circle me-1"></i>${lang.unavailable}</span>`;
+
+            // Star rating display
+            const avgRating = parseFloat(car.avg_rating) || 0;
+            const reviewCount = parseInt(car.review_count) || 0;
+            let starsHtml = '';
+            if (reviewCount > 0) {
+                starsHtml = `<div class="text-warning mb-2 small">`;
+                for (let i = 1; i <= 5; i++) {
+                    starsHtml += `<i class="${i <= Math.round(avgRating) ? 'fas' : 'far'} fa-star"></i>`;
+                }
+                starsHtml += ` <span class="text-muted">(${reviewCount})</span></div>`;
+            } else {
+                starsHtml = `<div class="text-muted mb-2 small"><i class="far fa-star me-1"></i>New Car</div>`;
+            }
+
             html += `
             <div class="col-md-4 mb-4">
-                <div class="deal-card h-100 shadow-sm">
+                <div class="deal-card h-100 shadow-sm ${!isAvailable ? 'opacity-75' : ''}">
                     <div class="deal-image">
                         <img src="${imageUrl}" alt="${car.brand_name} ${car.name}">
                         ${discountBadge}
                         <div style="position:absolute;top:10px;right:10px;">
-                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Available</span>
+                            ${availabilityBadge}
                         </div>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title fw-bold">${car.brand_name} ${car.name}</h5>
-                        ${car.plate_number ? '<p class="mb-1"><span class="badge bg-dark"><i class="fas fa-id-card me-1"></i>' + car.plate_number + '</span></p>' : ''}
+                        <h5 class="card-title fw-bold mb-1">${car.brand_name} ${car.name}</h5>
+                        ${starsHtml}
                         <p class="text-muted mb-2">
                             <small>
                                 <i class="fas fa-cog me-1"></i>${car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)} |
-                                <i class="fas fa-users ms-2 me-1"></i>${car.seats} seats
-                                ${car.type_name ? '| <i class="fas fa-car-side ms-2 me-1"></i>' + car.type_name : ''}
-                                ${car.color ? '| <i class="fas fa-palette ms-2 me-1"></i>' + car.color : ''}
+                                <i class="fas fa-users ms-2 me-1"></i>${car.seats} seats |
+                                ${car.type_name ? '<i class="fas fa-car-side me-1"></i>' + car.type_name + ' | ' : ''}
+                                ${car.color ? '<i class="fas fa-palette me-1"></i>' + car.color : ''}
                             </small>
                         </p>
                         <p class="mb-3">${priceHtml}</p>
-                        <a href="car-detail.php?id=${car.id}" class="btn btn-primary btn-sm w-100">
+                        <a href="car-detail.php?id=${car.id}" class="btn ${isAvailable ? 'btn-primary' : 'btn-outline-secondary'} w-100">
                             <i class="fas fa-eye me-1"></i>View Details
                         </a>
                     </div>

@@ -123,19 +123,28 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
 </div>
 
-<script src="<?php echo SITE_URL; ?>/assets/js/filter.js"></script>
+<script>
+const lang = {
+    available: '<?php echo addslashes(__('available')); ?>',
+    unavailable: '<?php echo addslashes(__('unavailable')); ?>'
+};
+</script>
+<script src="<?php echo SITE_URL; ?>/assets/js/filter.js?v=<?php echo time(); ?>"></script>
 
 <script>
 // Build initial URL with pre-selected filters
-let initialUrl = '<?php echo SITE_URL; ?>/api/cars.php';
+let initialUrl = '<?php echo SITE_URL; ?>/api/cars.php?_t=' + new Date().getTime();
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('type') || urlParams.get('goal')) {
-    initialUrl = '<?php echo SITE_URL; ?>/api/filter.php?' + urlParams.toString();
+    initialUrl = '<?php echo SITE_URL; ?>/api/filter.php?' + urlParams.toString() + '&_t=' + new Date().getTime();
 }
 
 fetch(initialUrl)
     .then(res => res.json())
-    .then(data => renderCars(data))
+    .then(data => {
+        console.log("Cars loaded:", data);
+        renderCars(data);
+    })
     .catch(err => {
         document.getElementById('carsContainer').innerHTML = 
             '<div class="col-12 text-center py-5"><p class="text-danger">Failed to load cars. Please refresh the page.</p></div>';

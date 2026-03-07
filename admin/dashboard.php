@@ -44,6 +44,14 @@ $stats['approved_orders'] = $result->fetch_assoc()['count'];
 $result = $conn->query("SELECT COUNT(*) as count FROM users WHERE role = 'user'");
 $stats['total_users'] = $result->fetch_assoc()['count'];
 
+// Pending SOS
+$result = $conn->query("SELECT COUNT(*) as count FROM emergency_requests WHERE status = 'pending'");
+$stats['pending_sos'] = $result->fetch_assoc()['count'];
+
+// Unread Feedback
+$result = $conn->query("SELECT COUNT(*) as count FROM admin_feedback WHERE is_read = 0");
+$stats['unread_feedback'] = $result->fetch_assoc()['count'];
+
 // --- Today's Analytics ---
 
 // Rentals starting today
@@ -211,10 +219,21 @@ $returned_cars_list = $conn->query("
     <?php display_flash_message(); ?>
 
     <!-- Alert Banner -->
-    <?php if ($stats['overdue_returns'] > 0): ?>
-    <div class="dash-alert dash-alert-danger">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span><strong><?php echo $stats['overdue_returns']; ?> <?php echo __('admin_overdue_returns'); ?></strong> — <?php echo __('admin_overdue_followup'); ?></span>
+    <?php if ($stats['overdue_returns'] > 0 || $stats['pending_sos'] > 0): ?>
+    <div class="dash-alerts mb-3">
+        <?php if ($stats['pending_sos'] > 0): ?>
+        <div class="dash-alert dash-alert-danger shadow-sm mb-2">
+            <i class="fas fa-ambulance animate-pulse"></i>
+            <span><strong><?php echo $stats['pending_sos']; ?> EMERGENCY SOS REQUESTS PENDING!</strong> — <a href="emergencies.php" class="text-white text-decoration-underline">Take action immediately</a></span>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($stats['overdue_returns'] > 0): ?>
+        <div class="dash-alert dash-alert-warning shadow-sm">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><strong><?php echo $stats['overdue_returns']; ?> <?php echo __('admin_overdue_returns'); ?></strong> — <?php echo __('admin_overdue_followup'); ?></span>
+        </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 

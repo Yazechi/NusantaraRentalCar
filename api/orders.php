@@ -27,6 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notes = trim($_POST['notes'] ?? '');
     $order_type = $_POST['order_type'] ?? 'website';
     $rental_occasion = $_POST['rental_occasion'] ?? null;
+    $has_driver = isset($_POST['has_driver']) ? 1 : 0;
+    $has_tools = isset($_POST['has_tools']) ? 1 : 0;
+    
     if ($rental_occasion && !in_array($rental_occasion, ['business', 'family', 'vacation', 'daily', 'other'])) {
         $rental_occasion = null;
     }
@@ -64,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Calculate rental end date
     $rental_end_date = date('Y-m-d', strtotime($rental_start_date . " + $duration_days days"));
     
-    // Get car price using prepared statement
+    // Get car price and fees using prepared statement
     $stmt = $conn->prepare("SELECT price_per_day FROM cars WHERE id = ?");
     $stmt->bind_param("i", $car_id);
     $stmt->execute();
@@ -76,10 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash_message('danger', 'Car not found.');
         redirect(SITE_URL . '/cars.php');
     }
+
+    $driver_daily_fee = (float)get_site_setting('driver_daily_fee');
+    $tool_kit_fee = (float)get_site_setting('tool_kit_fee');
     
     // Check available stock for this car (not rented during the requested dates)
-    $rental_end_date = date('Y-m-d', strtotime($rental_start_date . " + $duration_days days"));
-    
     // Find an available stock unit that doesn't have overlapping bookings
     $stmt = $conn->prepare("SELECT cs.id, cs.plate_number FROM car_stock cs 
         WHERE cs.car_id = ? AND cs.status = 'available'
@@ -147,18 +151,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $discount_type = 'family'; $discount_percent = 10;
     }
     
-    $total_price = $discount_percent > 0
+    $car_total = $discount_percent > 0
         ? round($original_price * (1 - $discount_percent / 100))
         : $original_price;
+
+    // Add extra services fees
+    $current_driver_fee = $has_driver ? ($driver_daily_fee * $duration_days) : 0;
+    $current_tools_fee = $has_tools ? $tool_kit_fee : 0;
+    $total_price = $car_total + $current_driver_fee + $current_tools_fee;
     
+    // Prepare values for SQL
+    $status = 'pending';
+
     // WhatsApp order
     if ($order_type === 'whatsapp') {
         // Get WhatsApp number from settings
         $wa_number = get_site_setting('whatsapp_number') ?? '6281234567890';
         
         // Insert order first
-        $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes) VALUES (?, ?, ?, 'whatsapp', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
-        $stmt->bind_param("iiissisiddsiss", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $notes);
+        $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes, has_driver, has_tools, driver_fee, tools_fee) VALUES (?, ?, ?, 'whatsapp', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iiissisiddsissiiid", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
         $stmt->execute();
         $order_id = $conn->insert_id;
         $stmt->close();
@@ -169,32 +181,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $stmt->close();
         
-        // Send email notifications
-        $user = get_logged_in_user();
-        if ($user) {
-            // Get car details for email
-            $car_stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name FROM cars c JOIN car_brands cb ON c.brand_id = cb.id WHERE c.id = ?");
-            $car_stmt->bind_param("i", $car_id);
-            $car_stmt->execute();
-            $car_details = $car_stmt->get_result()->fetch_assoc();
-            $car_stmt->close();
-            $car_full_name = $car_details['brand_name'] . ' ' . $car_details['name'];
-            
-            // Send confirmation to user
-            send_order_confirmation_user($user['email'], $user['name'], $order_id, $car_full_name, $rental_start_date, $rental_end_date, $total_price);
-            
-            // Send notification to admin
-            send_order_notification_admin($order_id, $user['name'], $car_full_name, $total_price);
-        }
-        
         // Build WhatsApp message
         $message = "Halo Admin, saya ingin menyewa mobil.\n";
         $message .= "Order ID: #$order_id\n";
         $message .= "Tanggal mulai: $rental_start_date\n";
         $message .= "Durasi: $duration_days hari\n";
+        if ($has_driver) $message .= "- Dengan Supir\n";
+        if ($has_tools) $message .= "- Dengan Tool Kit\n";
         if ($discount_percent > 0) {
             $message .= "Diskon: $discount_percent% ($discount_type)\n";
-            $message .= "Harga Asli: Rp " . number_format($original_price, 0, ',', '.') . "\n";
         }
         $message .= "Total: Rp " . number_format($total_price, 0, ',', '.');
         
@@ -204,8 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Website order
-    $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes) VALUES (?, ?, ?, 'website', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
-    $stmt->bind_param("iiissisiddsiss", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $notes);
+    $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes, has_driver, has_tools, driver_fee, tools_fee) VALUES (?, ?, ?, 'website', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiissisiddsissiiid", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
     
     if ($stmt->execute()) {
         $order_id = $conn->insert_id;

@@ -101,12 +101,36 @@ $stmt_first->close();
                         </div>
                     </div>
 
+                    <!-- Service Add-ons -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body py-2">
+                            <h6 class="card-title mb-2"><i class="fas fa-plus-circle me-1"></i> <?php echo __('extra_services'); ?></h6>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox" name="has_driver" id="has_driver" value="1">
+                                <label class="form-check-label d-flex justify-content-between" for="has_driver">
+                                    <span><?php echo __('driver_service'); ?></span>
+                                    <span class="text-primary fw-bold">+ <?php echo format_currency(get_site_setting('driver_daily_fee')); ?>/<?php echo trim(__('per_day'), '/ '); ?></span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="has_tools" id="has_tools" value="1">
+                                <label class="form-check-label d-flex justify-content-between" for="has_tools">
+                                    <span><?php echo __('tool_kit_service'); ?></span>
+                                    <span class="text-primary fw-bold">+ <?php echo format_currency(get_site_setting('tool_kit_fee')); ?></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-secondary text-center mb-3">
                         <div id="originalPriceRow" style="display:none;">
                             <small class="text-muted"><s id="originalPriceDisplay">Rp 0</s></small><br>
                         </div>
                         <strong><?php echo __('estimated_total'); ?>:</strong> <span class="text-primary fs-5" id="total_display">Rp 0</span>
                     </div>
+
+                    <input type="hidden" id="driver_daily_fee" value="<?php echo (int)get_site_setting('driver_daily_fee'); ?>">
+                    <input type="hidden" id="tool_kit_fee" value="<?php echo (int)get_site_setting('tool_kit_fee'); ?>">
 
                     <small class="text-muted d-block mb-3"><i class="fas fa-info-circle"></i> <?php echo __('best_discount_note'); ?></small>
 
@@ -165,12 +189,18 @@ function calcDiscount() {
     var days = parseInt(durationInput.value) || 0;
     var startDate = startDateInput.value;
     var occasion = occasionSelect.value;
+    var hasDriver = document.getElementById('has_driver').checked;
+    var hasTools = document.getElementById('has_tools').checked;
+    var driverDailyFee = parseInt(document.getElementById('driver_daily_fee').value);
+    var toolKitFee = parseInt(document.getElementById('tool_kit_fee').value);
+
     if (days < 1) {
         totalDisplay.innerText = 'Rp 0';
         originalPriceRow.style.display = 'none';
         discountPreview.style.display = 'none';
         return;
     }
+    
     var originalTotal = days * pricePerDay;
     var bestKey = null, bestPct = 0;
 
@@ -191,24 +221,32 @@ function calcDiscount() {
         bestKey = 'family'; bestPct = 10;
     }
 
+    var totalAfterDiscount = originalTotal;
     if (bestKey) {
-        var discounted = Math.round(originalTotal * (1 - bestPct / 100));
-        totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(discounted);
+        totalAfterDiscount = Math.round(originalTotal * (1 - bestPct / 100));
         originalPriceDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
         originalPriceRow.style.display = '';
         discountLabel.innerText = discountDefs[bestKey].label + ' (-' + bestPct + '%)';
         discountDesc.innerText = ' — ' + discountDefs[bestKey].desc;
         discountPreview.style.display = '';
     } else {
-        totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
         originalPriceRow.style.display = 'none';
         discountPreview.style.display = 'none';
     }
+
+    // Add extra services
+    var finalTotal = totalAfterDiscount;
+    if (hasDriver) finalTotal += (driverDailyFee * days);
+    if (hasTools) finalTotal += toolKitFee;
+
+    totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(finalTotal);
 }
 
 durationInput.addEventListener('input', calcDiscount);
 startDateInput.addEventListener('change', calcDiscount);
 occasionSelect.addEventListener('change', calcDiscount);
+document.getElementById('has_driver').addEventListener('change', calcDiscount);
+document.getElementById('has_tools').addEventListener('change', calcDiscount);
 
 // Show/hide delivery address field
 const deliveryOption = document.getElementById('delivery_option');

@@ -17,6 +17,12 @@ $current_lang = get_current_lang();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? sanitize_output($page_title) . ' - ' : ''; ?><?php echo SITE_NAME; ?></title>
     <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/images/meTrevFinal.png">
+    
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
@@ -27,10 +33,10 @@ $current_lang = get_current_lang();
         font-style: normal;
     }
     </style>
-    <link href="<?php echo SITE_URL; ?>/assets/css/style.css" rel="stylesheet">
+    <link href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo time(); ?>" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top custom-navbar">
         <div class="container">
             <a class="navbar-brand fw-bold" href="<?php echo SITE_URL; ?>/">
                 <img src="<?php echo SITE_URL; ?>/assets/images/meTrevFinal.png" alt="MeTrev" style="height:48px;width:48px;object-fit:contain;margin-right:8px;border-radius:50%;">
@@ -82,6 +88,7 @@ $current_lang = get_current_lang();
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/profile.php"><i class="fas fa-user-edit"></i> <?php echo __('nav_profile'); ?></a></li>
                                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/my-orders.php"><i class="fas fa-clipboard-list"></i> <?php echo __('nav_my_orders'); ?></a></li>
+                                <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/profile.php?tab=feedback"><i class="fas fa-envelope-open-text"></i> <?php echo __('send_feedback'); ?></a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/logout.php"><i class="fas fa-sign-out-alt"></i> <?php echo __('nav_logout'); ?></a></li>
                             </ul>

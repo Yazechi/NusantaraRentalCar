@@ -177,8 +177,8 @@ backToTopButton.innerHTML = '<i class="fas fa-arrow-up"></i>';
 backToTopButton.className = 'btn btn-primary btn-back-to-top';
 backToTopButton.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 30px;
+    right: 30px;
     display: none;
     z-index: 999;
     border-radius: 50%;

@@ -51,6 +51,25 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-users"></i> <?php echo __('admin_users'); ?>
             </a>
 
+            <!-- Support & Feedback -->
+            <div class="nav-section">
+                <div class="section-title">
+                    <i class="fas fa-headset"></i> Support & Interaction
+                </div>
+                <a class="nav-link ms-3 <?php echo $current_page === 'emergencies.php' ? 'active' : ''; ?>"
+                    href="<?php echo SITE_URL; ?>/admin/emergencies.php">
+                    <i class="fas fa-ambulance"></i> Emergency SOS
+                </a>
+                <a class="nav-link ms-3 <?php echo $current_page === 'feedback.php' ? 'active' : ''; ?>"
+                    href="<?php echo SITE_URL; ?>/admin/feedback.php">
+                    <i class="fas fa-comment-dots"></i> User Feedback
+                </a>
+                <a class="nav-link ms-3 <?php echo $current_page === 'reviews.php' ? 'active' : ''; ?>"
+                    href="<?php echo SITE_URL; ?>/admin/reviews.php">
+                    <i class="fas fa-star"></i> Car Reviews
+                </a>
+            </div>
+
             <!-- Settings -->
             <a class="nav-link <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>"
                 href="<?php echo SITE_URL; ?>/admin/settings.php">

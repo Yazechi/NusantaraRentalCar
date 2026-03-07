@@ -12,7 +12,10 @@ if (!$car_id) {
 }
 
 // Use prepared statement to prevent SQL injection
-$stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name
+$stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
+        (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count
         FROM cars c
         JOIN car_brands cb ON c.brand_id = cb.id
         LEFT JOIN car_types ct ON c.type_id = ct.id
@@ -37,126 +40,174 @@ $stmt->bind_param("i", $car_id);
 $stmt->execute();
 $rental_goals = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
-// Get available stock count for this car
-$stock_stmt = $conn->prepare("SELECT COUNT(*) as available_stock FROM car_stock WHERE car_id = ? AND status = 'available'");
-$stock_stmt->bind_param("i", $car_id);
-$stock_stmt->execute();
-$available_stock = $stock_stmt->get_result()->fetch_assoc()['available_stock'];
-$stock_stmt->close();
 
-// Get available stock units with plate numbers
-$plates_stmt = $conn->prepare("SELECT id, plate_number, status FROM car_stock WHERE car_id = ? AND status = 'available' ORDER BY plate_number ASC");
-$plates_stmt->bind_param("i", $car_id);
-$plates_stmt->execute();
-$available_plates = $plates_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$plates_stmt->close();
+// Get reviews
+$stmt = $conn->prepare("SELECT cr.*, u.name as user_name FROM car_reviews cr JOIN users u ON cr.user_id = u.id WHERE cr.car_id = ? ORDER BY cr.created_at DESC");
+$stmt->bind_param("i", $car_id);
+$stmt->execute();
+$reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+$available_stock = (int)$car['available_stock'];
 ?>
 
 <div class="row">
-    <div class="col-md-6">
-        <?php if (!empty($car['image_main'])): ?>
-            <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" class="img-fluid rounded" alt="<?php echo sanitize_output($car['name']); ?>">
-        <?php else: ?>
-            <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
-                <i class="fas fa-car fa-5x text-white"></i>
-            </div>
-        <?php endif; ?>
-    </div>
-    <div class="col-md-6">
-        <h2><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h2>
-        <?php if (!empty($car['model'])): ?>
-            <p class="text-muted"><?php echo sanitize_output($car['model']); ?> <?php echo !empty($car['year']) ? '(' . (int)$car['year'] . ')' : ''; ?></p>
-        <?php endif; ?>
-        
-        <?php 
-        $discount = isset($car['discount_percent']) ? (int)$car['discount_percent'] : 0;
-        $discounted_price = $discount > 0 ? $car['price_per_day'] * (1 - $discount / 100) : $car['price_per_day'];
-        ?>
-        <?php if ($discount > 0): ?>
-        <div class="mb-3">
-            <span class="badge bg-danger fs-6 me-2"><i class="fas fa-bolt me-1"></i><?php echo $discount; ?>% OFF</span>
-            <span class="price-original fs-5"><?php echo format_currency($car['price_per_day']); ?></span>
-            <span class="price-discounted fs-3"><?php echo format_currency($discounted_price); ?></span>
-            <span class="text-muted"><?php echo __('per_day'); ?></span>
-        </div>
-        <?php else: ?>
-        <h3 class="text-primary mb-3"><?php echo format_currency($car['price_per_day']); ?> <?php echo __('per_day'); ?></h3>
-        <?php endif; ?>
-
-        <p class="mb-3">
-            <?php if ($available_stock > 0): ?>
-                <span class="badge bg-success"><i class="fas fa-check-circle"></i> <?php echo __('in_stock'); ?>: <?php echo $available_stock; ?> <?php echo __('units_available'); ?></span>
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <?php if (!empty($car['image_main'])): ?>
+                <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" class="card-img-top rounded" alt="<?php echo sanitize_output($car['name']); ?>">
             <?php else: ?>
-                <span class="badge bg-danger"><i class="fas fa-times-circle"></i> <?php echo __('out_of_stock'); ?></span>
+                <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
+                    <i class="fas fa-car fa-5x text-white"></i>
+                </div>
             <?php endif; ?>
-        </p>
+        </div>
 
-        <?php if (!empty($available_plates)): ?>
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-id-card me-1"></i> <?php echo __('license_label'); ?></h5>
-                <div class="d-flex flex-wrap gap-2">
-                    <?php foreach ($available_plates as $plate): ?>
-                        <span class="badge bg-dark fs-6"><i class="fas fa-car me-1"></i> <?php echo sanitize_output($plate['plate_number']); ?></span>
-                    <?php endforeach; ?>
+        <!-- Reviews Section -->
+        <div class="mt-4">
+            <h4 class="mb-3"><i class="fas fa-star text-warning me-2"></i><?php echo __('customer_reviews'); ?> (<?php echo (int)$car['review_count']; ?>)</h4>
+            <?php if (empty($reviews)): ?>
+                <div class="alert alert-light border text-muted">
+                    <?php echo __('no_reviews_yet'); ?>
+                </div>
+            <?php else: ?>
+                <?php foreach ($reviews as $rev): ?>
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong class="text-primary"><?php echo sanitize_output($rev['user_name']); ?></strong>
+                            <div class="text-warning small">
+                                <?php for($i=1; $i<=5; $i++): ?>
+                                    <i class="<?php echo $i <= $rev['rating'] ? 'fas' : 'far'; ?> fa-star"></i>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <p class="mb-1 fst-italic">"<?php echo nl2br(sanitize_output($rev['comment'])); ?>"</p>
+                        <small class="text-muted"><?php echo format_date($rev['created_at']); ?></small>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h2 class="fw-bold mb-0"><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h2>
+                    <p class="text-muted"><?php echo sanitize_output($car['model']); ?> <?php echo !empty($car['year']) ? '(' . (int)$car['year'] . ')' : ''; ?></p>
+                </div>
+                <?php if ($car['review_count'] > 0): ?>
+                <div class="text-center bg-warning text-white p-2 rounded shadow-sm">
+                    <div class="fw-bold fs-4"><?php echo number_format($car['avg_rating'], 1); ?></div>
+                    <div class="small">/ 5.0</div>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <?php 
+            $discount = isset($car['discount_percent']) ? (int)$car['discount_percent'] : 0;
+            $discounted_price = $discount > 0 ? $car['price_per_day'] * (1 - $discount / 100) : $car['price_per_day'];
+            ?>
+            
+            <div class="mb-4">
+                <?php if ($discount > 0): ?>
+                    <span class="badge bg-danger fs-6 me-2 mb-2"><i class="fas fa-bolt me-1"></i><?php echo $discount; ?>% OFF</span>
+                    <div>
+                        <span class="price-original fs-5 text-decoration-line-through text-muted"><?php echo format_currency($car['price_per_day']); ?></span>
+                        <span class="price-discounted fs-2 text-primary fw-bold"><?php echo format_currency($discounted_price); ?></span>
+                        <span class="text-muted">/ day</span>
+                    </div>
+                <?php else: ?>
+                    <span class="price-normal fs-2 text-primary fw-bold"><?php echo format_currency($car['price_per_day']); ?></span>
+                    <span class="text-muted">/ day</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="mb-4">
+                <?php if ($available_stock > 0): ?>
+                    <span class="badge bg-success py-2 px-3 shadow-sm"><i class="fas fa-check-circle me-1"></i> <?php echo __('in_stock'); ?> (<?php echo $available_stock; ?> <?php echo __('units_available'); ?>)</span>
+                <?php else: ?>
+                    <span class="badge bg-danger py-2 px-3 shadow-sm"><i class="fas fa-times-circle me-1"></i> <?php echo __('out_of_stock'); ?></span>
+                <?php endif; ?>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-light p-3 rounded mb-4">
+                <div class="row text-center g-2">
+                    <div class="col-4 border-end">
+                        <i class="fas fa-users text-muted mb-1"></i>
+                        <div class="small fw-bold"><?php echo (int)$car['seats']; ?> Seats</div>
+                    </div>
+                    <div class="col-4 border-end">
+                        <i class="fas fa-cog text-muted mb-1"></i>
+                        <div class="small fw-bold"><?php echo ucfirst(sanitize_output($car['transmission'])); ?></div>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-gas-pump text-muted mb-1"></i>
+                        <div class="small fw-bold">Pertamax</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <?php endif; ?>
-        
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><?php echo __('specifications'); ?></h5>
-                <ul class="list-unstyled mb-0">
-                    <li><i class="fas fa-users me-2"></i> <strong><?php echo __('seats_label'); ?>:</strong> <?php echo (int)$car['seats']; ?></li>
-                    <li><i class="fas fa-cog me-2"></i> <strong><?php echo __('transmission_label'); ?>:</strong> <?php echo ucfirst(sanitize_output($car['transmission'])); ?></li>
-                    <li><i class="fas fa-gas-pump me-2"></i> <strong><?php echo __('fuel_label'); ?>:</strong> <?php echo format_fuel_type($car['fuel_type']); ?><?php if (!empty($car['is_electric'])): ?> <span class="badge bg-success"><i class="fas fa-bolt"></i> EV</span><?php endif; ?></li>
-                    <?php if (!empty($car['color'])): ?>
-                    <li><i class="fas fa-palette me-2"></i> <strong><?php echo __('color_label'); ?>:</strong> <?php echo sanitize_output($car['color']); ?></li>
-                    <?php endif; ?>
-                    <?php if (!empty($car['type_name'])): ?>
-                    <li><i class="fas fa-car-side me-2"></i> <strong><?php echo __('type_label'); ?>:</strong> <?php echo sanitize_output($car['type_name']); ?></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
 
-        <?php if (!empty($rental_goals)): ?>
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><?php echo __('suitable_for'); ?></h5>
+            <!-- Added Services Showcase -->
+            <div class="card border-primary mb-4 bg-light border-opacity-25">
+                <div class="card-body p-3 small">
+                    <h6 class="fw-bold mb-2"><i class="fas fa-plus-circle me-1 text-primary"></i> <?php echo __('available_addons'); ?></h6>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span><i class="fas fa-user-tie me-1 text-muted"></i> <?php echo __('professional_driver'); ?></span>
+                        <span class="text-primary fw-bold">+ Rp 150.000 /<?php echo trim(__('per_day'), '/ '); ?></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span><i class="fas fa-tools me-1 text-muted"></i> <?php echo __('maintenance_toolkit'); ?></span>
+                        <span class="text-primary fw-bold">+ Rp 50.000</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-ambulance me-1 text-muted"></i> <?php echo __('sos_support'); ?></span>
+                        <span class="text-success fw-bold"><?php echo __('free'); ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (!empty($rental_goals)): ?>
+            <div class="mb-4">
+                <h6 class="fw-bold small mb-2 text-muted"><?php echo __('perfect_for'); ?></h6>
                 <div class="d-flex flex-wrap gap-2">
                     <?php foreach ($rental_goals as $goal): ?>
-                        <span class="badge bg-primary"><i class="<?php echo sanitize_output($goal['icon']); ?> me-1"></i> <?php echo sanitize_output($goal['name']); ?></span>
+                        <?php $g_key = 'goal_' . str_replace([' & ', '-', ' '], ['_', '', '_'], strtolower($goal['name'])); ?>
+                        <span class="badge bg-white text-dark border shadow-sm"><i class="<?php echo sanitize_output($goal['icon']); ?> me-1 text-primary"></i> <?php echo sanitize_output(__($g_key) !== $g_key ? __($g_key) : $goal['name']); ?></span>
                     <?php endforeach; ?>
                 </div>
             </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($car['description'])): ?>
-            <h5><?php echo __('description'); ?></h5>
-            <p><?php echo nl2br(sanitize_output($car['description'])); ?></p>
-        <?php endif; ?>
-        
-        <?php if ($available_stock > 0): ?>
-            <div class="d-grid gap-2">
-                <a href="<?php echo SITE_URL; ?>/order.php?id=<?php echo (int)$car['id']; ?>" class="btn btn-primary btn-lg">
-                    <i class="fas fa-shopping-cart"></i> <?php echo __('rent_this_car'); ?>
-                </a>
+            <?php endif; ?>
+            
+            <div class="mt-auto pt-3">
+                <?php if ($available_stock > 0): ?>
+                    <div class="d-grid gap-2">
+                        <a href="<?php echo SITE_URL; ?>/order.php?id=<?php echo (int)$car['id']; ?>" class="btn btn-primary btn-lg shadow">
+                            <i class="fas fa-shopping-cart me-2"></i> <?php echo __('rent_this_car'); ?>
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle me-1"></i> <?php echo __('car_not_available'); ?>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-outline-secondary btn-lg">
+                             <?php echo __('explore_other_cars'); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php else: ?>
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> <?php echo __('car_not_available'); ?>
-            </div>
-        <?php endif; ?>
-        
-        <div class="mt-3">
-            <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> <?php echo __('back_to_cars'); ?>
-            </a>
         </div>
     </div>
+</div>
+
+<div class="mt-4 mb-5">
+    <a href="<?php echo SITE_URL; ?>/cars.php" class="text-decoration-none text-muted">
+        <i class="fas fa-arrow-left me-1"></i> <?php echo __('back_to_all_cars'); ?>
+    </a>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -6,6 +6,9 @@
 // Start output buffering to prevent header errors
 ob_start();
 
+// Set timezone to match server/database timezone
+date_default_timezone_set('Asia/Jakarta');
+
 // Environment detection
 $is_production = ($_SERVER['SERVER_NAME'] ?? 'localhost') !== 'localhost';
 
