@@ -237,22 +237,41 @@ $returned_cars_list = $conn->query("
     </div>
     <?php endif; ?>
 
-    <!-- Revenue Banner -->
-    <div class="dash-revenue-banner">
-        <div class="dash-revenue-main">
-            <span class="dash-revenue-label"><?php echo __('admin_revenue_today'); ?></span>
-            <span class="dash-revenue-amount"><?php echo format_currency($stats['payments_today_total']); ?></span>
-            <span class="dash-revenue-sub"><?php echo $stats['payments_today_count']; ?> <?php echo __('admin_payments'); ?></span>
+    <!-- Revenue Cards Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-start border-primary border-4 mb-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;"><?php echo __('admin_revenue_today'); ?></span>
+                        <div class="bg-primary bg-opacity-10 text-primary rounded p-2"><i class="fas fa-money-bill-wave"></i></div>
+                    </div>
+                    <h3 class="mb-1 text-primary fw-bold"><?php echo format_currency($stats['payments_today_total']); ?></h3>
+                    <div class="text-muted small"><?php echo $stats['payments_today_count']; ?> <?php echo __('admin_payments'); ?></div>
+                </div>
+            </div>
         </div>
-        <div class="dash-revenue-divider"></div>
-        <div class="dash-revenue-item">
-            <span class="dash-revenue-label"><?php echo __('admin_this_month'); ?></span>
-            <span class="dash-revenue-val"><?php echo format_currency($stats['revenue_this_month']); ?></span>
+        <div class="col-md-4">
+            <div class="card h-100 border-start border-success border-4 mb-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;"><?php echo __('admin_this_month'); ?></span>
+                        <div class="bg-success bg-opacity-10 text-success rounded p-2"><i class="fas fa-calendar-alt"></i></div>
+                    </div>
+                    <h3 class="mb-1 text-success fw-bold"><?php echo format_currency($stats['revenue_this_month']); ?></h3>
+                </div>
+            </div>
         </div>
-        <div class="dash-revenue-divider"></div>
-        <div class="dash-revenue-item">
-            <span class="dash-revenue-label"><?php echo __('admin_total_revenue_alltime'); ?></span>
-            <span class="dash-revenue-val"><?php echo format_currency($stats['total_revenue']); ?></span>
+        <div class="col-md-4">
+            <div class="card h-100 border-start border-info border-4 mb-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;"><?php echo __('admin_total_revenue_alltime'); ?></span>
+                        <div class="bg-info bg-opacity-10 text-info rounded p-2"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                    <h3 class="mb-1 text-info fw-bold"><?php echo format_currency($stats['total_revenue']); ?></h3>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -696,9 +715,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const revenueLabels = <?php echo json_encode(array_column($revenue_7days, 'date')); ?>;
     const revenueData = <?php echo json_encode(array_column($revenue_7days, 'total')); ?>;
 
-    // Chart.js default defaults for dark theme
-    Chart.defaults.color = '#b8c4d0';
-    Chart.defaults.font.family = "'DM Sans', sans-serif";
+    // Chart.js default defaults for light theme
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.font.family = "'Inter', sans-serif";
 
     // Revenue Chart (Line or Bar)
     const ctxRev = document.getElementById('revenueChart');
@@ -710,11 +729,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Revenue',
                     data: revenueData,
-                    borderColor: '#c9a84c',
-                    backgroundColor: 'rgba(201, 168, 76, 0.2)',
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#c9a84c',
-                    pointBorderColor: '#16161f',
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointRadius: 4,
                     pointHoverRadius: 6,
@@ -728,10 +747,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#1c1c28',
-                        titleColor: '#eef2f7',
-                        bodyColor: '#b8c4d0',
-                        borderColor: 'rgba(255,255,255,0.08)',
+                        backgroundColor: '#ffffff',
+                        titleColor: '#0f172a',
+                        bodyColor: '#334155',
+                        borderColor: '#e2e8f0',
                         borderWidth: 1,
                         padding: 10,
                         displayColors: false,
@@ -745,14 +764,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#7a8899' }
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        ticks: { color: '#64748b' }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        grid: { color: '#f1f5f9', drawBorder: false },
                         ticks: {
-                            color: '#7a8899',
+                            color: '#64748b',
                             callback: function(value) {
                                 if (value >= 1000000) {
                                     return (value / 1000000) + 'M';
@@ -786,7 +805,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     data: statusCounts,
                     backgroundColor: ['#f59e0b', '#10b981', '#06b6d4', '#ef4444'],
-                    borderWidth: 0,
+                    borderWidth: 2,
+                    borderColor: 'transparent',
                     hoverOffset: 4
                 }]
             },
@@ -797,10 +817,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#1c1c28',
-                        titleColor: '#eef2f7',
-                        bodyColor: '#b8c4d0',
-                        borderColor: 'rgba(255,255,255,0.08)',
+                        backgroundColor: '#ffffff',
+                        titleColor: '#0f172a',
+                        bodyColor: '#334155',
+                        borderColor: '#e2e8f0',
                         borderWidth: 1,
                         padding: 10
                     }

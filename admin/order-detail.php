@@ -75,9 +75,14 @@ if (!$order) {
             <h1><i class="fas fa-file-invoice"></i> <?php echo __('admin_order_id'); ?> #<?php echo $order['id']; ?></h1>
             <p><?php echo __('admin_view_manage_order'); ?></p>
         </div>
-        <a href="<?php echo SITE_URL; ?>/admin/orders.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> <?php echo __('admin_back_to_orders'); ?>
-        </a>
+        <div>
+            <a href="<?php echo SITE_URL; ?>/receipt.php?order_id=<?php echo $order['id']; ?>" target="_blank" class="btn btn-outline-primary me-2">
+                <i class="fas fa-print"></i> Print Receipt
+            </a>
+            <a href="<?php echo SITE_URL; ?>/admin/orders.php" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> <?php echo __('admin_back_to_orders'); ?>
+            </a>
+        </div>
     </div>
 
     <?php display_flash_message(); ?>
@@ -245,9 +250,14 @@ if (!$order) {
                     <h5 class="mb-0"><i class="fas fa-user"></i> <?php echo __('admin_customer_info'); ?></h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small"><?php echo __('admin_name'); ?></label>
-                        <p><?php echo sanitize_output($order['user_name']); ?></p>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; font-size: 1.2rem; font-weight: bold;">
+                            <?php echo strtoupper(substr($order['user_name'], 0, 1)); ?>
+                        </div>
+                        <div>
+                            <h6 class="mb-0"><?php echo sanitize_output($order['user_name']); ?></h6>
+                            <small class="text-muted">Customer ID: #<?php echo $order['user_id']; ?></small>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small"><?php echo __('admin_email'); ?></label>

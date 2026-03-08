@@ -51,7 +51,7 @@ $total_result = $conn->query("SELECT COUNT(*) as count FROM cars");
 $total_cars = $total_result->fetch_assoc()['count'];
 $total_pages = ceil($total_cars / $per_page);
 
-// Get cars with brand info and stock counts
+// Get cars with brand info, stock counts, and primary image
 $cars_query = "
     SELECT 
         c.id, 
@@ -59,6 +59,7 @@ $cars_query = "
         c.model, 
         c.year,
         c.price_per_day,
+        c.image_main,
         b.name as brand_name,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id) AS total_stock,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
@@ -105,9 +106,10 @@ $stmt->close();
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Image</th>
                         <th><?php echo __('admin_brand'); ?></th>
                         <th><?php echo __('admin_car_name'); ?></th>
                         <th><?php echo __('admin_model'); ?></th>
@@ -128,6 +130,13 @@ $stmt->close();
                         <?php foreach ($cars as $car): ?>
                             <tr>
                                 <td><strong>#<?php echo $car['id']; ?></strong></td>
+                                <td>
+                                    <?php if (!empty($car['image_main'])): ?>
+                                        <img src="<?php echo SITE_URL . '/uploads/cars/' . sanitize_output($car['image_main']); ?>" alt="Car Image" class="table-img-thumbnail">
+                                    <?php else: ?>
+                                        <span class="text-muted"><i class="fas fa-image fa-2x"></i></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo sanitize_output($car['brand_name']); ?></td>
                                 <td><?php echo sanitize_output($car['name']); ?></td>
                                 <td><?php echo sanitize_output($car['model']); ?></td>
@@ -136,22 +145,24 @@ $stmt->close();
                                 <td>
                                     <span class="badge bg-success"><?php echo (int)$car['available_stock']; ?> <?php echo __('admin_avail'); ?></span>
                                     <?php if ($car['rented_stock'] > 0): ?>
-                                        <span class="badge bg-warning"><?php echo (int)$car['rented_stock']; ?> <?php echo __('admin_rented'); ?></span>
+                                        <span class="badge bg-warning text-dark"><?php echo (int)$car['rented_stock']; ?> <?php echo __('admin_rented'); ?></span>
                                     <?php endif; ?>
-                                    <br><small class="text-muted">Total: <?php echo (int)$car['total_stock']; ?></small>
-                                    <a href="<?php echo SITE_URL; ?>/admin/car-stock.php?car_id=<?php echo $car['id']; ?>" class="btn btn-sm btn-outline-secondary ms-1" title="<?php echo __('admin_manage_stock_units'); ?>">
-                                        <i class="fas fa-boxes"></i>
-                                    </a>
+                                    <div class="mt-1"><small class="text-muted">Total: <strong><?php echo (int)$car['total_stock']; ?></strong></small></div>
                                 </td>
                                 <td>
-                                    <a href="<?php echo SITE_URL; ?>/admin/car-edit.php?id=<?php echo $car['id']; ?>"
-                                        class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> <?php echo __('admin_edit'); ?>
-                                    </a>
-                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal<?php echo $car['id']; ?>">
-                                        <i class="fas fa-trash"></i> <?php echo __('admin_delete'); ?>
-                                    </button>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="<?php echo SITE_URL; ?>/admin/car-stock.php?car_id=<?php echo $car['id']; ?>" class="btn btn-sm btn-info" title="<?php echo __('admin_manage_stock_units'); ?>">
+                                            <i class="fas fa-boxes me-1"></i> Stock
+                                        </a>
+                                        <a href="<?php echo SITE_URL; ?>/admin/car-edit.php?id=<?php echo $car['id']; ?>"
+                                            class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit me-1"></i> Edit
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal<?php echo $car['id']; ?>">
+                                            <i class="fas fa-trash me-1"></i> Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
 

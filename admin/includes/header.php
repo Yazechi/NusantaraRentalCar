@@ -115,7 +115,7 @@ if ($__overdue_count > 0 && $__last_read) {
 }
 $__badge_count += $__overdue_badge;
 
-// 4. Pending Orders
+// 5. Pending Orders
 $__pending_orders_q = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'");
 $__pending_orders_count = $__pending_orders_q ? $__pending_orders_q->fetch_assoc()['cnt'] : 0;
 $__orders_show = !in_array('notif-orders', $__dismissed);
@@ -130,6 +130,22 @@ if ($__pending_orders_count > 0 && $__last_read) {
     $__orders_badge = $__pending_orders_count;
 }
 $__badge_count += $__orders_badge;
+
+// 6. Recent Paid Payments
+$__paid_q = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE payment_status = 'paid' AND paid_at >= NOW() - INTERVAL 24 HOUR");
+$__paid_count = $__paid_q ? $__paid_q->fetch_assoc()['cnt'] : 0;
+$__paid_show = !in_array('notif-paid', $__dismissed);
+$__paid_badge = 0;
+if ($__paid_count > 0 && $__last_read) {
+    $__pq2 = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE payment_status = 'paid' AND paid_at >= NOW() - INTERVAL 24 HOUR AND paid_at > ?");
+    $__pq2->bind_param("s", $__last_read);
+    $__pq2->execute();
+    $__paid_badge = $__pq2->get_result()->fetch_assoc()['cnt'];
+    $__pq2->close();
+} elseif ($__paid_count > 0) {
+    $__paid_badge = $__paid_count;
+}
+$__badge_count += $__paid_badge;
 
 ?>
 <!DOCTYPE html>
@@ -161,6 +177,11 @@ $__badge_count += $__orders_badge;
         .notif-dismiss:hover { opacity: 1; }
         .notif-item { transition: opacity 0.3s, max-height 0.3s; }
     </style>
+    <script>
+        // Apply theme early to prevent flash
+        var savedTheme = localStorage.getItem('adminTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
 </head>
 <body>
     <div class="admin-wrapper">
@@ -168,11 +189,17 @@ $__badge_count += $__orders_badge;
             <div class="container-fluid">
                 <a class="navbar-brand" href="<?php echo SITE_URL; ?>/admin/dashboard.php">
                     <img src="<?php echo SITE_URL; ?>/assets/images/meTrevFinal.png" alt="MeTrev" style="height:40px; border-radius:50%; margin-right:10px;">
-                    <span><?php echo SITE_NAME; ?> Admin</span>
+                    <span class="brand-text"><?php echo SITE_NAME; ?> Admin</span>
                 </a>
                 
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav ms-auto align-items-center">
+                        <!-- Theme Toggle -->
+                        <li class="nav-item me-3">
+                            <button class="btn btn-link nav-link px-2" id="themeToggleBtn" title="Toggle Theme" style="font-size: 1.1rem; color: var(--navbar-text);">
+                                <i class="fas fa-moon"></i>
+                            </button>
+                        </li>
                         <!-- Language Switcher -->
                         <li class="nav-item dropdown me-3">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -220,7 +247,7 @@ $__badge_count += $__orders_badge;
                                 </a></li>
                                 <?php endif; ?>
 
-                                <?php $__ops_visible = ($__overdue_count > 0 && $__overdue_show) || ($__pending_orders_count > 0 && $__orders_show); ?>
+                                <?php $__ops_visible = ($__overdue_count > 0 && $__overdue_show) || ($__pending_orders_count > 0 && $__orders_show) || ($__paid_count > 0 && $__paid_show); ?>
                                 <?php if ($__ops_visible): ?>
                                 <li class="dropdown-header small text-uppercase fw-bold text-secondary px-3 pt-2 pb-1"><i class="fas fa-car me-1"></i> Operations</li>
                                 <?php endif; ?>
@@ -234,6 +261,12 @@ $__badge_count += $__orders_badge;
                                 <li class="notif-item" id="notif-orders"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/orders.php?status=pending">
                                     <span class="flex-grow-1"><i class="fas fa-shopping-cart text-info me-2"></i> <strong><?php echo $__pending_orders_count; ?></strong> New Orders</span>
                                     <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-orders');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                </a></li>
+                                <?php endif; ?>
+                                <?php if ($__paid_count > 0 && $__paid_show): ?>
+                                <li class="notif-item" id="notif-paid"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/orders.php?payment_status=paid">
+                                    <span class="flex-grow-1"><i class="fas fa-money-bill-wave text-success me-2"></i> <strong><?php echo $__paid_count; ?></strong> Recent Payments</span>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-paid');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
                                 <?php endif; ?>
 

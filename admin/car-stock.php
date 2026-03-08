@@ -142,7 +142,7 @@ $csrf_token = generate_csrf_token();
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                        <thead>
                             <tr>
                                 <th>ID</th>
                                 <th><?php echo __('admin_plate_number'); ?></th>
@@ -181,49 +181,51 @@ $csrf_token = generate_csrf_token();
                                         </td>
                                         <td><small><?php echo sanitize_output($unit['notes'] ?? ''); ?></small></td>
                                         <td>
-                                            <!-- Status toggle buttons -->
-                                            <?php if ($unit['status'] === 'rented' && !$unit['active_order_id']): ?>
-                                                <form method="POST" class="d-inline">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
-                                                    <input type="hidden" name="new_status" value="available">
-                                                    <?php echo csrf_input_field(); ?>
-                                                    <button type="submit" class="btn btn-sm btn-success" title="Mark as Available (Returned)">
-                                                        <i class="fas fa-undo"></i> Return
-                                                    </button>
-                                                </form>
-                                            <?php elseif ($unit['status'] === 'available'): ?>
-                                                <form method="POST" class="d-inline">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
-                                                    <input type="hidden" name="new_status" value="maintenance">
-                                                    <?php echo csrf_input_field(); ?>
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Set to Maintenance">
-                                                        <i class="fas fa-tools"></i>
-                                                    </button>
-                                                </form>
-                                            <?php elseif ($unit['status'] === 'maintenance'): ?>
-                                                <form method="POST" class="d-inline">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
-                                                    <input type="hidden" name="new_status" value="available">
-                                                    <?php echo csrf_input_field(); ?>
-                                                    <button type="submit" class="btn btn-sm btn-success" title="Mark as Available">
-                                                        <i class="fas fa-check"></i> Ready
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($unit['status'] !== 'rented'): ?>
-                                                <form method="POST" class="d-inline" onsubmit="return confirm('Delete unit <?php echo sanitize_output($unit['plate_number']); ?>?');">
-                                                    <input type="hidden" name="action" value="delete_stock">
-                                                    <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
-                                                    <?php echo csrf_input_field(); ?>
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                <!-- Status toggle buttons -->
+                                                <?php if ($unit['status'] === 'rented' && !$unit['active_order_id']): ?>
+                                                    <form method="POST" class="m-0">
+                                                        <input type="hidden" name="action" value="update_status">
+                                                        <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
+                                                        <input type="hidden" name="new_status" value="available">
+                                                        <?php echo csrf_input_field(); ?>
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Mark as Available (Returned)">
+                                                            <i class="fas fa-undo me-1"></i> Return
+                                                        </button>
+                                                    </form>
+                                                <?php elseif ($unit['status'] === 'available'): ?>
+                                                    <form method="POST" class="m-0">
+                                                        <input type="hidden" name="action" value="update_status">
+                                                        <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
+                                                        <input type="hidden" name="new_status" value="maintenance">
+                                                        <?php echo csrf_input_field(); ?>
+                                                        <button type="submit" class="btn btn-sm btn-warning text-dark" title="Set to Maintenance">
+                                                            <i class="fas fa-tools me-1"></i> Maintain
+                                                        </button>
+                                                    </form>
+                                                <?php elseif ($unit['status'] === 'maintenance'): ?>
+                                                    <form method="POST" class="m-0">
+                                                        <input type="hidden" name="action" value="update_status">
+                                                        <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
+                                                        <input type="hidden" name="new_status" value="available">
+                                                        <?php echo csrf_input_field(); ?>
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Mark as Available">
+                                                            <i class="fas fa-check me-1"></i> Ready
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                                
+                                                <?php if ($unit['status'] !== 'rented'): ?>
+                                                    <form method="POST" class="m-0" onsubmit="return confirm('Delete unit <?php echo sanitize_output($unit['plate_number']); ?>?');">
+                                                        <input type="hidden" name="action" value="delete_stock">
+                                                        <input type="hidden" name="stock_id" value="<?php echo $unit['id']; ?>">
+                                                        <?php echo csrf_input_field(); ?>
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

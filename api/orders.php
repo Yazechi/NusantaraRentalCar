@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Insert order first
         $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes, has_driver, has_tools, driver_fee, tools_fee) VALUES (?, ?, ?, 'whatsapp', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("iiissisiddsissiiid", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
+        $stmt->bind_param("iiississddsissiiidd", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
         $stmt->execute();
         $order_id = $conn->insert_id;
         $stmt->close();
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Website order
     $stmt = $conn->prepare("INSERT INTO orders (user_id, car_id, car_stock_id, order_type, rental_start_date, rental_end_date, duration_days, delivery_option, delivery_address, total_price, original_price, discount_type, discount_percent, rental_occasion, status, notes, has_driver, has_tools, driver_fee, tools_fee) VALUES (?, ?, ?, 'website', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iiissisiddsissiiid", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
+    $stmt->bind_param("iiississddsissiiidd", $user_id, $car_id, $car_stock_id, $rental_start_date, $rental_end_date, $duration_days, $delivery_option, $delivery_address, $total_price, $original_price, $discount_type, $discount_percent, $rental_occasion, $status, $notes, $has_driver, $has_tools, $current_driver_fee, $current_tools_fee);
     
     if ($stmt->execute()) {
         $order_id = $conn->insert_id;
