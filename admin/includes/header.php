@@ -1,7 +1,5 @@
 <?php
-// Admin Header - JANGAN OUTPUT APAPUN SEBELUM HTML TAG
-// File ini menangani auth, session, language, dan global notifications
-
+// Admin Header - Handles auth, session, language, and global notifications
 if (!session_id()) session_start();
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -33,119 +31,118 @@ $__today = date('Y-m-d');
 $__badge_count = 0;
 $__admin_id = (int)$_SESSION['user_id'];
 
-// Get last read timestamp and dismissed keys for this admin
+// Get last read timestamp for this admin
 $__last_read = null;
 $__lr_q = $conn->prepare("SELECT last_read_at FROM admin_notification_read WHERE admin_id = ?");
 $__lr_q->bind_param("i", $__admin_id);
 $__lr_q->execute();
-$__lr_row = $__lr_q->get_result()->fetch_assoc();
-if ($__lr_row) $__last_read = $__lr_row['last_read_at'];
+$__lr_res = $__lr_q->get_result();
+if ($__lr_res && $__lr_row = $__lr_res->fetch_assoc()) {
+    $__last_read = $__lr_row['last_read_at'];
+}
 $__lr_q->close();
 
+// Get dismissed notification keys
 $__dismissed = [];
 $__dm_q = $conn->prepare("SELECT notification_key FROM admin_notification_dismissed WHERE admin_id = ?");
 $__dm_q->bind_param("i", $__admin_id);
 $__dm_q->execute();
 $__dm_res = $__dm_q->get_result();
-while ($__dm_row = $__dm_res->fetch_assoc()) $__dismissed[] = $__dm_row['notification_key'];
+if ($__dm_res) {
+    while ($__dm_row = $__dm_res->fetch_assoc()) {
+        $__dismissed[] = $__dm_row['notification_key'];
+    }
+}
 $__dm_q->close();
 
-// 1. Pending SOS Requests (High Priority)
-$__sos_q = $conn->query("SELECT COUNT(*) as cnt FROM emergency_requests WHERE status = 'pending'");
-$__sos_count = $__sos_q ? $__sos_q->fetch_assoc()['cnt'] : 0;
-$__sos_show = !in_array('notif-sos', $__dismissed);
-// Badge: only count SOS created after last read
-$__sos_badge = 0;
-if ($__sos_count > 0 && $__last_read) {
-    $__sq = $conn->prepare("SELECT COUNT(*) as cnt FROM emergency_requests WHERE status = 'pending' AND created_at > ?");
-    $__sq->bind_param("s", $__last_read);
-    $__sq->execute();
-    $__sos_badge = $__sq->get_result()->fetch_assoc()['cnt'];
-    $__sq->close();
-} elseif ($__sos_count > 0) {
-    $__sos_badge = $__sos_count;
+// Helper to check if item is dismissed
+if (!function_exists('is_notif_dismissed')) {
+    function is_notif_dismissed($key, $dismissed_array) {
+        return in_array($key, $dismissed_array);
+    }
 }
-$__badge_count += $__sos_badge;
+
+/**
+ * Helper to fetch notifications and update badge
+ */
+function fetch_notifications($query, $prefix, $dismissed, $last_read, &$badge_count, $time_col = 'created_at') {
+    global $conn;
+    $result = $conn->query($query);
+    $items = [];
+    if ($result) {
+        $all = $result->fetch_all(MYSQLI_ASSOC);
+        foreach ($all as $item) {
+            $key = $prefix . "-" . $item['id'];
+            if (!in_array($key, $dismissed)) {
+                $items[] = $item;
+                if (!$last_read || $item[$time_col] > $last_read) {
+                    $badge_count++;
+                }
+            }
+        }
+    }
+    return $items;
+}
+
+// 1. Pending SOS Requests
+$__sos_items = fetch_notifications(
+    "SELECT er.*, u.name as user_name, c.name as car_name, cs.plate_number 
+     FROM emergency_requests er 
+     JOIN users u ON er.user_id = u.id 
+     JOIN car_stock cs ON er.car_stock_id = cs.id 
+     JOIN cars c ON cs.car_id = c.id
+     WHERE er.status = 'pending' ORDER BY er.created_at DESC LIMIT 10",
+    "notif-sos", $__dismissed, $__last_read, $__badge_count
+);
 
 // 2. Unread Feedback
-$__fb_q = $conn->query("SELECT COUNT(*) as cnt FROM admin_feedback WHERE is_read = 0");
-$__fb_count = $__fb_q ? $__fb_q->fetch_assoc()['cnt'] : 0;
-$__fb_show = !in_array('notif-fb', $__dismissed);
-$__fb_badge = 0;
-if ($__fb_count > 0 && $__last_read) {
-    $__fq = $conn->prepare("SELECT COUNT(*) as cnt FROM admin_feedback WHERE is_read = 0 AND created_at > ?");
-    $__fq->bind_param("s", $__last_read);
-    $__fq->execute();
-    $__fb_badge = $__fq->get_result()->fetch_assoc()['cnt'];
-    $__fq->close();
-} elseif ($__fb_count > 0) {
-    $__fb_badge = $__fb_count;
-}
-$__badge_count += $__fb_badge;
+$__fb_items = fetch_notifications(
+    "SELECT * FROM admin_feedback WHERE is_read = 0 ORDER BY created_at DESC LIMIT 10",
+    "notif-fb", $__dismissed, $__last_read, $__badge_count
+);
 
-// 2b. New Reviews (last 24 hours)
-$__review_q = $conn->query("SELECT COUNT(*) as cnt FROM car_reviews WHERE created_at >= NOW() - INTERVAL 24 HOUR");
-$__review_count = $__review_q ? $__review_q->fetch_assoc()['cnt'] : 0;
-$__review_show = !in_array('notif-review', $__dismissed);
-$__review_badge = 0;
-if ($__review_count > 0 && $__last_read) {
-    $__rq = $conn->prepare("SELECT COUNT(*) as cnt FROM car_reviews WHERE created_at >= NOW() - INTERVAL 24 HOUR AND created_at > ?");
-    $__rq->bind_param("s", $__last_read);
-    $__rq->execute();
-    $__review_badge = $__rq->get_result()->fetch_assoc()['cnt'];
-    $__rq->close();
-} elseif ($__review_count > 0) {
-    $__review_badge = $__review_count;
-}
-$__badge_count += $__review_badge;
+// 3. New Reviews (last 7 days)
+$__review_items = fetch_notifications(
+    "SELECT cr.*, u.name as user_name, c.name as car_name 
+     FROM car_reviews cr 
+     JOIN users u ON cr.user_id = u.id 
+     JOIN cars c ON cr.car_id = c.id
+     WHERE cr.created_at >= NOW() - INTERVAL 7 DAY ORDER BY cr.created_at DESC LIMIT 10",
+    "notif-review", $__dismissed, $__last_read, $__badge_count
+);
 
-// 3. Overdue Rentals
-$__overdue_q = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE rental_end_date < '$__today' AND status = 'approved'");
-$__overdue_count = $__overdue_q ? $__overdue_q->fetch_assoc()['cnt'] : 0;
-$__overdue_show = !in_array('notif-overdue', $__dismissed);
-$__overdue_badge = 0;
-if ($__overdue_count > 0 && $__last_read) {
-    $__oq = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE rental_end_date < ? AND status = 'approved' AND updated_at > ?");
-    $__oq->bind_param("ss", $__today, $__last_read);
-    $__oq->execute();
-    $__overdue_badge = $__oq->get_result()->fetch_assoc()['cnt'];
-    $__oq->close();
-} elseif ($__overdue_count > 0) {
-    $__overdue_badge = $__overdue_count;
-}
-$__badge_count += $__overdue_badge;
+// 4. Overdue Rentals
+$__overdue_items = fetch_notifications(
+    "SELECT o.*, u.name as user_name, c.name as car_name 
+     FROM orders o 
+     JOIN users u ON o.user_id = u.id 
+     JOIN cars c ON o.car_id = c.id 
+     WHERE o.rental_end_date < '$__today' AND o.status = 'approved' ORDER BY o.rental_end_date ASC LIMIT 10",
+    "notif-overdue", $__dismissed, $__last_read, $__badge_count, 'updated_at'
+);
 
 // 5. Pending Orders
-$__pending_orders_q = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'");
-$__pending_orders_count = $__pending_orders_q ? $__pending_orders_q->fetch_assoc()['cnt'] : 0;
-$__orders_show = !in_array('notif-orders', $__dismissed);
-$__orders_badge = 0;
-if ($__pending_orders_count > 0 && $__last_read) {
-    $__pq = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending' AND created_at > ?");
-    $__pq->bind_param("s", $__last_read);
-    $__pq->execute();
-    $__orders_badge = $__pq->get_result()->fetch_assoc()['cnt'];
-    $__pq->close();
-} elseif ($__pending_orders_count > 0) {
-    $__orders_badge = $__pending_orders_count;
-}
-$__badge_count += $__orders_badge;
+$__pending_orders_items = fetch_notifications(
+    "SELECT o.*, u.name as user_name, c.name as car_name 
+     FROM orders o 
+     JOIN users u ON o.user_id = u.id 
+     JOIN cars c ON o.car_id = c.id 
+     WHERE o.status = 'pending' ORDER BY o.created_at DESC LIMIT 10",
+    "notif-orders", $__dismissed, $__last_read, $__badge_count
+);
 
-// 6. Recent Paid Payments
-$__paid_q = $conn->query("SELECT COUNT(*) as cnt FROM orders WHERE payment_status = 'paid' AND paid_at >= NOW() - INTERVAL 24 HOUR");
-$__paid_count = $__paid_q ? $__paid_q->fetch_assoc()['cnt'] : 0;
-$__paid_show = !in_array('notif-paid', $__dismissed);
-$__paid_badge = 0;
-if ($__paid_count > 0 && $__last_read) {
-    $__pq2 = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE payment_status = 'paid' AND paid_at >= NOW() - INTERVAL 24 HOUR AND paid_at > ?");
-    $__pq2->bind_param("s", $__last_read);
-    $__pq2->execute();
-    $__paid_badge = $__pq2->get_result()->fetch_assoc()['cnt'];
-    $__pq2->close();
-} elseif ($__paid_count > 0) {
-    $__paid_badge = $__paid_count;
-}
-$__badge_count += $__paid_badge;
+// 6. Recent Paid Payments (last 3 days)
+$__paid_items = fetch_notifications(
+    "SELECT o.*, u.name as user_name, c.name as car_name 
+     FROM orders o 
+     JOIN users u ON o.user_id = u.id 
+     JOIN cars c ON o.car_id = c.id 
+     WHERE o.payment_status = 'paid' AND o.paid_at >= NOW() - INTERVAL 3 DAY ORDER BY o.paid_at DESC LIMIT 10",
+    "notif-paid", $__dismissed, $__last_read, $__badge_count, 'paid_at'
+);
+
+$__support_visible = !empty($__sos_items) || !empty($__fb_items) || !empty($__review_items);
+$__ops_visible = !empty($__overdue_items) || !empty($__pending_orders_items) || !empty($__paid_items);
 
 ?>
 <!DOCTYPE html>
@@ -163,7 +160,7 @@ $__badge_count += $__paid_badge;
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="<?php echo SITE_URL; ?>/assets/css/admin.css?v=<?php echo time() . rand(1, 1000); ?>" rel="stylesheet">
+    <link href="<?php echo SITE_URL; ?>/assets/css/admin.css?v=<?php echo time(); ?>" rel="stylesheet">
     <style>
         .notif-badge-pulse {
             animation: pulse-red 2s infinite;
@@ -176,6 +173,13 @@ $__badge_count += $__paid_badge;
         .notif-dismiss { opacity: 0.4; transition: opacity 0.2s; }
         .notif-dismiss:hover { opacity: 1; }
         .notif-item { transition: opacity 0.3s, max-height 0.3s; }
+        .border-bottom-light { border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .x-small { font-size: 0.75rem; }
+        .animate-pulse { animation: pulse-opacity 1.5s infinite; }
+        @keyframes pulse-opacity {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
     <script>
         // Apply theme early to prevent flash
@@ -194,13 +198,11 @@ $__badge_count += $__paid_badge;
                 
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav ms-auto align-items-center">
-                        <!-- Theme Toggle -->
                         <li class="nav-item me-3">
                             <button class="btn btn-link nav-link px-2" id="themeToggleBtn" title="Toggle Theme" style="font-size: 1.1rem; color: var(--navbar-text);">
                                 <i class="fas fa-moon"></i>
                             </button>
                         </li>
-                        <!-- Language Switcher -->
                         <li class="nav-item dropdown me-3">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-globe"></i> <?php echo strtoupper($current_lang); ?>
@@ -216,62 +218,97 @@ $__badge_count += $__paid_badge;
                             <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" id="notifBellToggle" onclick="clearNotifBadge()">
                                 <i class="fas fa-bell fa-lg"></i>
                                 <?php if ($__badge_count > 0): ?>
-                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <?php echo $__sos_count > 0 ? 'notif-badge-pulse' : ''; ?>">
+                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <?php echo !empty($__sos_items) ? 'notif-badge-pulse' : ''; ?>">
                                     <?php echo $__badge_count; ?>
                                 </span>
                                 <?php endif; ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="width: 340px; max-height: 420px; overflow-y: auto;">
-                                <li class="dropdown-header border-bottom">Notifications</li>
+                                <li class="dropdown-header border-bottom py-2">Notifications</li>
 
-                                <?php $__support_visible = ($__sos_count > 0 && $__sos_show) || ($__fb_count > 0 && $__fb_show) || ($__review_count > 0 && $__review_show); ?>
                                 <?php if ($__support_visible): ?>
-                                <li class="dropdown-header small text-uppercase fw-bold text-secondary px-3 pt-2 pb-1"><i class="fas fa-headset me-1"></i> Support & Interaction</li>
+                                <li class="dropdown-header small text-uppercase fw-bold text-secondary px-3 pt-3 pb-1"><i class="fas fa-headset me-1"></i> Support & Interaction</li>
                                 <?php endif; ?>
-                                <?php if ($__sos_count > 0 && $__sos_show): ?>
-                                <li class="notif-item" id="notif-sos"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/emergencies.php">
-                                    <span class="flex-grow-1"><i class="fas fa-ambulance text-danger me-2"></i> <strong><?php echo $__sos_count; ?></strong> Pending SOS</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-sos');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                
+                                <?php foreach($__sos_items as $item): ?>
+                                <li class="notif-item" id="notif-sos-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/emergencies.php">
+                                    <div class="bg-danger bg-opacity-10 p-2 rounded me-3"><i class="fas fa-exclamation-triangle text-danger"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-danger"><i class="fas fa-xs fa-circle me-1 animate-pulse"></i> SOS: BUTUH BANTUAN</div>
+                                        <div class="small fw-bold text-dark"><?php echo sanitize_output($item['car_name']); ?></div>
+                                        <div class="x-small text-muted"><?php echo sanitize_output($item['plate_number']); ?> • <?php echo sanitize_output($item['user_name']); ?></div>
+                                        <div class="x-small text-danger fw-bold mt-1"><i class="far fa-clock me-1"></i><?php echo time_elapsed_string($item['created_at']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-sos-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
-                                <?php endif; ?>
-                                <?php if ($__fb_count > 0 && $__fb_show): ?>
-                                <li class="notif-item" id="notif-fb"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/feedback.php">
-                                    <span class="flex-grow-1"><i class="fas fa-comment-dots text-primary me-2"></i> <strong><?php echo $__fb_count; ?></strong> New Feedbacks</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-fb');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                <?php endforeach; ?>
+
+                                <?php foreach($__fb_items as $item): ?>
+                                <li class="notif-item" id="notif-fb-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/feedback.php">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-3"><i class="fas fa-comment-dots text-primary"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-primary">New Feedback</div>
+                                        <div class="small text-truncate" style="max-width: 220px;"><?php echo sanitize_output($item['subject']); ?></div>
+                                        <div class="x-small text-muted"><?php echo sanitize_output($item['name']); ?> • <?php echo time_elapsed_string($item['created_at']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-fb-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
-                                <?php endif; ?>
-                                <?php if ($__review_count > 0 && $__review_show): ?>
-                                <li class="notif-item" id="notif-review"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/reviews.php">
-                                    <span class="flex-grow-1"><i class="fas fa-star text-warning me-2"></i> <strong><?php echo $__review_count; ?></strong> New Reviews</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-review');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                <?php endforeach; ?>
+
+                                <?php foreach($__review_items as $item): ?>
+                                <li class="notif-item" id="notif-review-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/reviews.php">
+                                    <div class="bg-warning bg-opacity-10 p-2 rounded me-3"><i class="fas fa-star text-warning"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-warning">New <?php echo $item['rating']; ?>-Star Review</div>
+                                        <div class="small text-truncate" style="max-width: 220px;"><?php echo sanitize_output($item['car_name']); ?></div>
+                                        <div class="x-small text-muted"><?php echo sanitize_output($item['user_name']); ?> • <?php echo time_elapsed_string($item['created_at']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-review-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
+                                <?php endforeach; ?>
+
+                                <?php if ($__ops_visible): ?>
+                                <li class="dropdown-header small text-uppercase fw-bold text-secondary px-3 pt-3 pb-1 border-top-light mt-1"><i class="fas fa-car me-1"></i> Operations</li>
                                 <?php endif; ?>
 
-                                <?php $__ops_visible = ($__overdue_count > 0 && $__overdue_show) || ($__pending_orders_count > 0 && $__orders_show) || ($__paid_count > 0 && $__paid_show); ?>
-                                <?php if ($__ops_visible): ?>
-                                <li class="dropdown-header small text-uppercase fw-bold text-secondary px-3 pt-2 pb-1"><i class="fas fa-car me-1"></i> Operations</li>
-                                <?php endif; ?>
-                                <?php if ($__overdue_count > 0 && $__overdue_show): ?>
-                                <li class="notif-item" id="notif-overdue"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/dashboard.php">
-                                    <span class="flex-grow-1"><i class="fas fa-exclamation-triangle text-warning me-2"></i> <strong><?php echo $__overdue_count; ?></strong> Overdue Returns</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-overdue');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                <?php foreach($__overdue_items as $item): ?>
+                                <li class="notif-item" id="notif-overdue-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/dashboard.php">
+                                    <div class="bg-warning bg-opacity-10 p-2 rounded me-3"><i class="fas fa-exclamation-triangle text-warning"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-warning">Overdue: <?php echo sanitize_output($item['car_name']); ?></div>
+                                        <div class="small">Due: <?php echo format_date($item['rental_end_date']); ?></div>
+                                        <div class="x-small text-muted">Customer: <?php echo sanitize_output($item['user_name']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-overdue-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
-                                <?php endif; ?>
-                                <?php if ($__pending_orders_count > 0 && $__orders_show): ?>
-                                <li class="notif-item" id="notif-orders"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/orders.php?status=pending">
-                                    <span class="flex-grow-1"><i class="fas fa-shopping-cart text-info me-2"></i> <strong><?php echo $__pending_orders_count; ?></strong> New Orders</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-orders');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                <?php endforeach; ?>
+
+                                <?php foreach($__pending_orders_items as $item): ?>
+                                <li class="notif-item" id="notif-orders-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/orders.php?status=pending">
+                                    <div class="bg-info bg-opacity-10 p-2 rounded me-3"><i class="fas fa-shopping-cart text-info"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-info">New Order #<?php echo $item['id']; ?></div>
+                                        <div class="small text-truncate" style="max-width: 220px;"><?php echo sanitize_output($item['car_name']); ?> • <?php echo format_currency($item['total_price']); ?></div>
+                                        <div class="x-small text-muted"><?php echo sanitize_output($item['user_name']); ?> • <?php echo time_elapsed_string($item['created_at']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-orders-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
-                                <?php endif; ?>
-                                <?php if ($__paid_count > 0 && $__paid_show): ?>
-                                <li class="notif-item" id="notif-paid"><a class="dropdown-item py-2 d-flex align-items-center" href="<?php echo SITE_URL; ?>/admin/orders.php?payment_status=paid">
-                                    <span class="flex-grow-1"><i class="fas fa-money-bill-wave text-success me-2"></i> <strong><?php echo $__paid_count; ?></strong> Recent Payments</span>
-                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-paid');" title="Dismiss"><i class="fas fa-times"></i></button>
+                                <?php endforeach; ?>
+
+                                <?php foreach($__paid_items as $item): ?>
+                                <li class="notif-item" id="notif-paid-<?php echo $item['id']; ?>"><a class="dropdown-item py-2 d-flex align-items-start border-bottom-light position-relative" href="<?php echo SITE_URL; ?>/admin/orders.php?payment_status=paid">
+                                    <div class="bg-success bg-opacity-10 p-2 rounded me-3"><i class="fas fa-money-bill-wave text-success"></i></div>
+                                    <div class="flex-grow-1 pe-3">
+                                        <div class="small fw-bold text-success">Payment Received</div>
+                                        <div class="small text-truncate" style="max-width: 220px;">Order #<?php echo $item['id']; ?> • <?php echo format_currency($item['total_price']); ?></div>
+                                        <div class="x-small text-muted"><?php echo sanitize_output($item['user_name']); ?> • <?php echo time_elapsed_string($item['paid_at']); ?></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-2 me-2 notif-dismiss" onclick="event.preventDefault();event.stopPropagation();dismissNotifItem('notif-paid-<?php echo $item['id']; ?>');" title="Dismiss"><i class="fas fa-times"></i></button>
                                 </a></li>
-                                <?php endif; ?>
+                                <?php endforeach; ?>
 
                                 <?php if (!$__support_visible && !$__ops_visible): ?>
-                                <li class="text-center py-3 text-muted small" id="notif-empty">No new notifications</li>
+                                <li class="text-center py-4 text-muted small" id="notif-empty"><i class="fas fa-check-circle d-block mb-2 fa-2x opacity-20"></i>No new notifications</li>
                                 <?php endif; ?>
                             </ul>
                         </li>

@@ -1365,7 +1365,7 @@ footer { margin-top: auto; }
 
 #chat-window {
     display: none; flex-direction: column; position: absolute;
-    bottom: 76px; right: 0; width: 360px; height: 520px;
+    bottom: 76px; right: 0; width: 420px; height: 600px;
     background: white; border-radius: var(--radius-md);
     box-shadow: var(--shadow-xl); overflow: hidden;
     border: 1px solid var(--border-subtle);

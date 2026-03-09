@@ -68,9 +68,13 @@ $stmt->close();
                             <td><small><?php echo nl2br(sanitize_output($req['message'])); ?></small></td>
                             <td>
                                 <?php
-                                $status_colors = ['pending' => 'danger', 'processed' => 'warning', 'completed' => 'success'];
+                                if ($req['status'] === 'pending') {
+                                    echo '<span class="badge bg-danger animate-pulse p-2"><i class="fas fa-exclamation-circle me-1"></i> BUTUH BANTUAN</span>';
+                                } else {
+                                    $status_colors = ['processed' => 'warning', 'completed' => 'success'];
+                                    echo '<span class="badge bg-' . $status_colors[$req['status']] . '">' . __($req['status']) . '</span>';
+                                }
                                 ?>
-                                <span class="badge bg-<?php echo $status_colors[$req['status']]; ?>"><?php echo __($req['status']); ?></span>
                             </td>
                             <td>
                                 <form method="POST" class="d-flex gap-1">

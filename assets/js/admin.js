@@ -273,35 +273,40 @@ window.AdminUtils = {
  * Toggle notification panel and mark as read (clears badge)
  */
 function toggleNotifPanel() {
-  var panel = document.getElementById('adminNotifPanel');
-  var isHidden = panel.classList.contains('d-none');
-  panel.classList.toggle('d-none');
-
-  // When opening the panel, mark notifications as read to clear badge
-  if (isHidden) {
-    var badge = document.getElementById('notifBadge');
-    if (badge) {
-      badge.style.display = 'none';
-    }
-    // POST to API to persist the read timestamp
-    fetch(window.__notifApiUrl || '/api/notifications.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'action=mark_read'
-    }).catch(function() {});
+  var badge = document.getElementById('notifBadge');
+  if (badge) {
+    badge.style.display = 'none';
   }
+  // POST to API to persist the read timestamp
+  fetch(window.__notifApiUrl || '../api/notifications.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'action=mark_read'
+  }).catch(function() {});
+}
+
+function clearNotifBadge() {
+  toggleNotifPanel();
 }
 
 /**
  * Dismiss a single notification item
  */
-function dismissNotif(key, elemId) {
+function dismissNotifItem(elemId) {
   var el = document.getElementById(elemId);
   if (!el) return;
-
-  // Find parent section and list
-  var list = el.closest('.admin-notif-list');
-  var section = el.closest('.admin-notif-section');
+  
+  var key = '';
+  // Determine key based on prefix
+  if (elemId.startsWith('notif-sos-summary') || elemId === 'notif-sos') key = 'notif-sos';
+  else if (elemId.startsWith('notif-sos-')) key = 'notif-sos-' + elemId.replace('notif-sos-', '');
+  else if (elemId.startsWith('notif-fb-summary') || elemId === 'notif-fb') key = 'notif-fb';
+  else if (elemId.startsWith('notif-fb-')) key = 'notif-fb-' + elemId.replace('notif-fb-', '');
+  else if (elemId.startsWith('notif-review-')) key = 'notif-review-' + elemId.replace('notif-review-', '');
+  else if (elemId.startsWith('notif-overdue-')) key = 'notif-overdue-' + elemId.replace('notif-overdue-', '');
+  else if (elemId.startsWith('notif-orders-summary') || elemId === 'notif-orders') key = 'notif-orders';
+  else if (elemId.startsWith('notif-orders-')) key = 'notif-orders-' + elemId.replace('notif-orders-', '');
+  else if (elemId.startsWith('notif-paid-')) key = 'notif-paid-' + elemId.replace('notif-paid-', '');
 
   // Animate removal
   el.style.transition = 'opacity 0.3s, max-height 0.3s';
@@ -315,42 +320,33 @@ function dismissNotif(key, elemId) {
   }, 150);
   setTimeout(function() {
     el.remove();
-
-    // Update section header count or hide section if empty
-    if (list && section) {
-      var remaining = list.querySelectorAll('.admin-notif-item').length;
-      var headerStrong = section.querySelector('.admin-notif-section-header strong');
-      if (remaining === 0) {
-        section.style.transition = 'opacity 0.3s';
-        section.style.opacity = '0';
-        setTimeout(function() { section.remove(); checkNotifEmpty(); }, 300);
-      } else if (headerStrong) {
-        // Update the number in the header text (e.g. "7 Pesanan Dibuat" -> "6 Pesanan Dibuat")
-        headerStrong.textContent = headerStrong.textContent.replace(/^\d+/, remaining);
-      }
-    }
+    checkNotifEmpty();
   }, 400);
 
   // POST to API to persist the dismissal
-  fetch(window.__notifApiUrl || '/api/notifications.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'action=dismiss&key=' + encodeURIComponent(key)
-  }).catch(function() {});
+  if (key) {
+      fetch(window.__notifApiUrl || '../api/notifications.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=dismiss&key=' + encodeURIComponent(key)
+      }).catch(function(err) { console.error('Error dismissing notification:', err); });
+  }
 }
 
 /**
  * Check if all notification sections are empty and show empty state
  */
 function checkNotifEmpty() {
-  var sections = document.querySelectorAll('#adminNotifPanel .admin-notif-section');
-  if (sections.length === 0) {
-    var container = document.querySelector('#adminNotifPanel .admin-notif-sections');
-    if (container && !container.querySelector('.admin-notif-empty')) {
-      container.innerHTML = '<div class="admin-notif-empty"><i class="fas fa-check-circle"></i><p>' +
-        (document.documentElement.lang === 'id' ? 'Tidak ada notifikasi — semua beres!' : 'No notifications — all clear!') +
-        '</p></div>';
-    }
+  var list = document.querySelector('.dropdown-menu[style*="max-height"]');
+  if (list) {
+      var remainingItems = list.querySelectorAll('.notif-item');
+      if (remainingItems.length === 0) {
+          var headers = list.querySelectorAll('.dropdown-header.small');
+          headers.forEach(h => h.remove());
+          if (!list.querySelector('#notif-empty')) {
+            list.insertAdjacentHTML('beforeend', '<li class="text-center py-3 text-muted small" id="notif-empty">No new notifications</li>');
+          }
+      }
   }
 }
 

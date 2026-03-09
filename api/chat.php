@@ -87,7 +87,8 @@ function getCarsContext() {
             c.price_per_day,
             c.year,
             c.description,
-            GROUP_CONCAT(rg.name SEPARATOR ', ') AS rental_goals
+            GROUP_CONCAT(DISTINCT rg.name SEPARATOR ', ') AS rental_goals,
+            (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') as available_stock
         FROM cars c
         JOIN car_brands cb ON c.brand_id = cb.id
         LEFT JOIN car_types ct ON c.type_id = ct.id
@@ -103,12 +104,14 @@ function getCarsContext() {
     $stmt->close();
     
     if (empty($cars)) {
-        return "No cars currently available.";
+        return "No cars currently available in the database.";
     }
     
-    $context = "Available cars in our rental fleet:\n\n";
+    $context = "Fleet Information (pay close attention to Stock Status):\n\n";
     foreach ($cars as $car) {
-        $context .= "- {$car['brand_name']} {$car['name']} ({$car['year']})\n";
+        $stock_status = $car['available_stock'] > 0 ? "AVAILABLE ({$car['available_stock']} units)" : "UNAVAILABLE (Out of stock)";
+        
+        $context .= "- {$car['brand_name']} {$car['name']} ({$car['year']}) - Stock: {$stock_status}\n";
         $context .= "  Type: " . ($car['type_name'] ?? 'N/A') . ", Color: " . ($car['color'] ?? 'N/A') . "\n";
         $context .= "  Seats: {$car['seats']}, Transmission: {$car['transmission']}, Fuel: {$car['fuel_type']}\n";
         $context .= "  Price: Rp " . number_format($car['price_per_day'], 0, ',', '.') . " per day\n";
@@ -134,11 +137,19 @@ function getGeminiResponse($userMessage, $carsContext, $apiKey) {
         
         // System prompt
         $systemPrompt = "You are a helpful car rental assistant for MeTrev Rental Mobil. " .
-                       "Answer customer questions about available cars based on the information provided. " .
-                       "You know each car's brand, name, type (SUV, Sedan, MPV, Pickup, Truck, EV, etc.), color, seats, transmission, fuel type, price, and what purposes they are suitable for (Business Trip, Vacation, Honeymoon, Wedding, Industrial, Construction, etc.). " .
-                       "When asked about specific car colors, types, or rental purposes, provide accurate answers from the data. " .
-                       "Be friendly, concise, and helpful. If asked about cars not in the list, politely say they're not available. " .
-                       "Always mention prices in Indonesian Rupiah (Rp). Keep responses under 150 words. " .
+                       "Answer customer questions about cars based ONLY on the provided Fleet Information. " .
+                       "CRITICAL RULE: Always check the 'Stock:' status of a car before recommending it. " .
+                       "If a user asks for a car that is 'UNAVAILABLE (Out of stock)', you MUST explicitly tell them it is currently out of stock or unavailable, and then suggest 1 or 2 similar alternative cars that are 'AVAILABLE'. " .
+                       "ONLY recommend cars that are marked as 'AVAILABLE'. " .
+                       "You know each car's brand, name, type, color, seats, transmission, fuel type, price, and what purposes they are suitable for. " .
+                       "You also know about the website features:\n" .
+                       "- Ordering: Customers can order by clicking 'Sewa Sekarang' on any car detail page, filling the form, and selecting a payment method.\n" .
+                       "- Order Status: Customers can check their order history and payment status in the 'My Orders' menu.\n" .
+                       "- Feedback/Reviews: Customers can leave reviews for their completed orders in the 'My Orders' section.\n" .
+                       "- Profile: Customers can update their personal information in the 'Profile' menu.\n" .
+                       "- Contact: For emergencies or direct questions, customers can use the WhatsApp button or 'Emergencies' menu.\n" .
+                       "Be friendly, concise, and helpful. If asked about cars not in the list at all, politely say they're not in our fleet. " .
+                       "Always mention prices in Indonesian Rupiah (Rp). Keep responses under 200 words. " .
                        "Format your response in plain text suitable for chat - use line breaks for readability but NO markdown formatting (no asterisks, no bold). " .
                        "List items on separate lines with simple numbering (1., 2., 3.) or dashes (-). " .
                        "Respond in the same language the customer uses (English or Indonesian).\n\n" .
@@ -443,7 +454,8 @@ function extractMentionedCars($response, $conn) {
     try {
         // Get all available cars to match against
         $stmt = $conn->prepare("
-            SELECT c.id, c.name, cb.name AS brand_name, c.image_main, c.price_per_day, c.year
+            SELECT c.id, c.name, cb.name AS brand_name, c.image_main, c.price_per_day, c.year,
+            (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') as available_stock
             FROM cars c 
             JOIN car_brands cb ON c.brand_id = cb.id 
             WHERE c.is_available = 1
@@ -472,11 +484,12 @@ function extractMentionedCars($response, $conn) {
                     'brand' => $car['brand_name'],
                     'image' => 'uploads/cars/' . $car['image_main'],
                     'price' => number_format($car['price_per_day'], 0, ',', '.'),
-                    'year' => $car['year']
+                    'year' => $car['year'],
+                    'stock' => (int)$car['available_stock']
                 ];
                 
-                // Limit to 3 cars max in display
-                if (count($cars) >= 3) break;
+                // Limit to 6 cars max in display
+                if (count($cars) >= 6) break;
             }
         }
     } catch (Exception $e) {

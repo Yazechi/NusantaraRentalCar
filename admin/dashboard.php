@@ -222,9 +222,15 @@ $returned_cars_list = $conn->query("
     <?php if ($stats['overdue_returns'] > 0 || $stats['pending_sos'] > 0): ?>
     <div class="dash-alerts mb-3">
         <?php if ($stats['pending_sos'] > 0): ?>
-        <div class="dash-alert dash-alert-danger shadow-sm mb-2">
-            <i class="fas fa-ambulance animate-pulse"></i>
-            <span><strong><?php echo $stats['pending_sos']; ?> EMERGENCY SOS REQUESTS PENDING!</strong> — <a href="emergencies.php" class="text-white text-decoration-underline">Take action immediately</a></span>
+        <div class="dash-alert dash-alert-danger shadow-sm mb-2 p-3 d-flex align-items-center">
+            <div class="alert-icon-wrap me-3">
+                <i class="fas fa-ambulance fa-2x animate-pulse"></i>
+            </div>
+            <div class="alert-content-wrap flex-grow-1">
+                <h5 class="mb-1 fw-bold text-white"><?php echo $stats['pending_sos']; ?> PERMINTAAN DARURAT (SOS)</h5>
+                <p class="mb-0 small opacity-90">Ada pelanggan yang membutuhkan bantuan segera di jalan. Harap segera tangani!</p>
+            </div>
+            <a href="emergencies.php" class="btn btn-light btn-sm fw-bold px-3">TANGANI SEKARANG <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
         <?php endif; ?>
         
