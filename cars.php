@@ -27,18 +27,19 @@ $sel_type = filter_input(INPUT_GET, 'type', FILTER_VALIDATE_INT) ?: '';
 $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 ?>
 
-<div class="container mt-4">
-
-    <h2 class="mb-4"><i class="fas fa-car"></i> <?php echo __('available_cars'); ?></h2>
+<div class="container mt-4 cars-page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-search"></i> <?php echo __('nav_cars'); ?></h1>
+    </div>
 
     <!-- FILTER FORM -->
-    <div class="card shadow-sm mb-4">
+    <div class="card card-refined border-0 mb-4">
         <div class="card-body">
             <form id="filterForm" class="row g-3">
 
                 <!-- BRAND -->
                 <div class="col-md-2">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_brand'); ?>"><?php echo __('filter_brand'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-tag me-1 text-primary"></i> <?php echo __('filter_brand'); ?></label>
                     <select name="brand" class="form-select">
                         <option value=""><?php echo __('filter_all_brands'); ?></option>
                         <?php foreach ($brands as $brand): ?>
@@ -49,7 +50,7 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
                 <!-- TYPE -->
                 <div class="col-md-2">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_type'); ?>"><?php echo __('filter_type'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-layer-group me-1 text-primary"></i> <?php echo __('filter_type'); ?></label>
                     <select name="type" class="form-select">
                         <option value=""><?php echo __('filter_all_types'); ?></option>
                         <?php foreach ($car_types as $type): 
@@ -64,7 +65,7 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
                 <!-- SEATS -->
                 <div class="col-md-1">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_seats'); ?>"><?php echo __('filter_seats'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-users me-1 text-primary"></i> <?php echo __('filter_seats'); ?></label>
                     <select name="seats" class="form-select">
                         <option value=""><?php echo __('filter_any'); ?></option>
                         <option value="2">2</option>
@@ -79,7 +80,7 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
                 <!-- TRANSMISSION -->
                 <div class="col-md-2">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_transmission'); ?>"><?php echo __('filter_transmission'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-cog me-1 text-primary"></i> <?php echo __('filter_transmission'); ?></label>
                     <select name="transmission" class="form-select">
                         <option value=""><?php echo __('filter_any'); ?></option>
                         <option value="automatic"><?php echo __('automatic'); ?></option>
@@ -89,7 +90,7 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
                 <!-- PRICE RANGE -->
                 <div class="col-md-2">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_price'); ?>"><?php echo __('filter_price'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-money-bill-wave me-1 text-primary"></i> <?php echo __('filter_price'); ?></label>
                     <select name="price_range" class="form-select">
                         <option value=""><?php echo __('filter_any_price'); ?></option>
                         <option value="0-300000">&lt; Rp 300K</option>
@@ -101,7 +102,7 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
 
                 <!-- RENTAL GOAL -->
                 <div class="col-md-2">
-                    <label class="form-label text-truncate w-100" title="<?php echo __('filter_goal'); ?>"><?php echo __('filter_goal'); ?></label>
+                    <label class="form-label text-truncate w-100"><i class="fas fa-map-marker-alt me-1 text-primary"></i> <?php echo __('filter_goal'); ?></label>
                     <select name="goal" class="form-select">
                         <option value=""><?php echo __('filter_all_goals'); ?></option>
                         <?php foreach ($rental_goals as $goal): ?>

@@ -62,7 +62,7 @@ $payment_badge = $payment_badges[$order['payment_status']] ?? $payment_badges['u
 
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card shadow-sm" id="receipt-content">
+        <div class="card card-refined border-0" id="receipt-content">
             <div class="card-body p-4">
                 <!-- Receipt Header -->
                 <div class="text-center mb-4 border-bottom pb-3">

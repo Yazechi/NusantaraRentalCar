@@ -35,7 +35,7 @@ $current_lang = get_current_lang();
     </style>
     <link href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo time(); ?>" rel="stylesheet">
 </head>
-<body>
+<body class="<?php echo 'page-' . $current_page; ?>">
     <nav class="navbar navbar-expand-lg navbar-light sticky-top custom-navbar">
         <div class="container">
             <a class="navbar-brand fw-bold" href="<?php echo SITE_URL; ?>/">

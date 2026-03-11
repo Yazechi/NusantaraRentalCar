@@ -227,10 +227,10 @@ $returned_cars_list = $conn->query("
                 <i class="fas fa-ambulance fa-2x animate-pulse"></i>
             </div>
             <div class="alert-content-wrap flex-grow-1">
-                <h5 class="mb-1 fw-bold text-white"><?php echo $stats['pending_sos']; ?> PERMINTAAN DARURAT (SOS)</h5>
-                <p class="mb-0 small opacity-90">Ada pelanggan yang membutuhkan bantuan segera di jalan. Harap segera tangani!</p>
+                <h5 class="mb-1 fw-bold text-white"><?php echo $stats['pending_sos']; ?> <?php echo __('admin_sos_alert'); ?></h5>
+                <p class="mb-0 small opacity-90"><?php echo __('admin_sos_desc'); ?></p>
             </div>
-            <a href="emergencies.php" class="btn btn-light btn-sm fw-bold px-3">TANGANI SEKARANG <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="emergencies.php" class="btn btn-light btn-sm fw-bold px-3"><?php echo __('admin_handle_now'); ?> <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
         <?php endif; ?>
         

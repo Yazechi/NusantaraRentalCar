@@ -24,107 +24,120 @@ $orders = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 ?>
 
-<h3 class="mb-4"><i class="fas fa-clipboard-list"></i> <?php echo __('my_orders'); ?></h3>
+<div class="page-header">
+    <h1><i class="fas fa-history"></i> <?php echo __('my_orders'); ?></h1>
+</div>
 
 <?php if (empty($orders)): ?>
-    <div class="card shadow-sm">
+    <div class="card card-refined">
         <div class="card-body text-center py-5">
-            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted"><?php echo __('no_orders'); ?></h5>
+            <i class="fas fa-shopping-cart fa-3x text-muted mb-3 opacity-50"></i>
+            <h5 class="text-muted fw-bold"><?php echo __('no_orders'); ?></h5>
             <p class="text-muted"><?php echo __('no_orders_desc'); ?></p>
-            <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-primary">
-                <i class="fas fa-car"></i> <?php echo __('browse_cars'); ?>
+            <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-primary px-4 mt-2">
+                <i class="fas fa-car me-2"></i> <?php echo __('browse_cars'); ?>
             </a>
         </div>
     </div>
 <?php else: ?>
-    <div class="card shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th><?php echo __('car'); ?></th>
-                        <th><?php echo __('rental_period'); ?></th>
-                        <th><?php echo __('duration'); ?></th>
-                        <th><?php echo __('total_price'); ?></th>
-                        <th><?php echo __('status'); ?></th>
-                        <th><?php echo __('payment_status'); ?></th>
-                        <th><?php echo __('action'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($orders as $order): ?>
-                    <tr>
-                        <td>
-                            <strong><?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?></strong>
-                            <?php if (!empty($order['plate_number'])): ?>
-                                <br><small class="text-muted"><i class="fas fa-id-card"></i> <?php echo sanitize_output($order['plate_number']); ?></small>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php echo format_date($order['rental_start_date']); ?> - 
-                            <?php echo format_date($order['rental_end_date']); ?>
-                        </td>
-                        <td><?php echo (int)$order['duration_days']; ?> <?php echo __('days'); ?></td>
-                        <td>
-                            <strong><?php echo format_currency($order['total_price']); ?></strong>
-                            <?php if ($order['discount_percent'] > 0): ?>
-                                <br><span class="badge bg-success" style="font-size:0.7em;"><i class="fas fa-tag"></i> -<?php echo (int)$order['discount_percent']; ?>%</span>
-                            <?php endif; ?>
-                        </td>
-                        <td><?php echo get_status_badge($order['status']); ?></td>
-                        <td>
-                            <?php
-                            $ps = $order['payment_status'] ?? 'unpaid';
-                            $ps_badges = [
-                                'paid' => '<span class="badge bg-success"><i class="fas fa-check"></i> ' . __('paid') . '</span>',
-                                'pending' => '<span class="badge bg-warning"><i class="fas fa-clock"></i> ' . __('pending') . '</span>',
-                                'unpaid' => '<span class="badge bg-secondary"><i class="fas fa-times"></i> ' . __('unpaid') . '</span>',
-                                'failed' => '<span class="badge bg-danger"><i class="fas fa-exclamation"></i> ' . __('payment_failed') . '</span>',
-                            ];
-                            echo $ps_badges[$ps] ?? $ps_badges['unpaid'];
-                            ?>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="<?php echo SITE_URL; ?>/receipt.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-outline-primary" title="<?php echo __('view_receipt'); ?>">
-                                    <i class="fas fa-receipt"></i>
+    <div class="row g-4">
+        <?php foreach ($orders as $order): 
+            $ps = $order['payment_status'] ?? 'unpaid';
+            $ps_badges = [
+                'paid' => '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> ' . __('paid') . '</span>',
+                'pending' => '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i> ' . __('pending') . '</span>',
+                'unpaid' => '<span class="badge bg-secondary"><i class="fas fa-times-circle me-1"></i> ' . __('unpaid') . '</span>',
+                'failed' => '<span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i> ' . __('payment_failed') . '</span>',
+            ];
+        ?>
+        <div class="col-12">
+            <div class="card card-refined border-0">
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <!-- Left Info -->
+                        <div class="col-md-8 p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-dark">
+                                        <?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?>
+                                    </h5>
+                                    <?php if (!empty($order['plate_number'])): ?>
+                                        <small class="text-muted text-uppercase letter-spacing-1"><?php echo sanitize_output($order['plate_number']); ?></small>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="text-end d-none d-md-block">
+                                    <?php echo get_status_badge($order['status']); ?>
+                                </div>
+                            </div>
+
+                            <div class="row text-muted small mb-3">
+                                <div class="col-sm-6 mb-2">
+                                    <i class="fas fa-calendar-alt me-2 text-primary"></i> 
+                                    <?php echo format_date($order['rental_start_date']); ?> - <?php echo format_date($order['rental_end_date']); ?>
+                                </div>
+                                <div class="col-sm-6 mb-2">
+                                    <i class="fas fa-hourglass-half me-2 text-primary"></i> 
+                                    <?php echo (int)$order['duration_days']; ?> <?php echo __('days'); ?>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-light rounded px-3 py-2">
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;"><?php echo __('total_price'); ?></small>
+                                    <span class="fw-bold text-dark fs-5"><?php echo format_currency($order['total_price']); ?></span>
+                                </div>
+                                <div class="ps-2 border-start">
+                                    <small class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size: 0.65rem;"><?php echo __('payment_status'); ?></small>
+                                    <?php echo $ps_badges[$ps] ?? $ps_badges['unpaid']; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Actions -->
+                        <div class="col-md-4 bg-light border-start p-4 d-flex flex-column justify-content-center">
+                            <div class="d-grid gap-2">
+                                <a href="<?php echo SITE_URL; ?>/receipt.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-outline-dark border-2 fw-bold">
+                                    <i class="fas fa-receipt me-2"></i> <?php echo __('view_details'); ?>
                                 </a>
+                                
                                 <?php if (($order['payment_status'] ?? 'unpaid') !== 'paid' && $order['status'] !== 'cancelled'): ?>
-                                <a href="<?php echo SITE_URL; ?>/payment.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-outline-success" title="<?php echo __('pay_now'); ?>">
-                                    <i class="fas fa-credit-card"></i>
+                                <a href="<?php echo SITE_URL; ?>/payment.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-success">
+                                    <i class="fas fa-credit-card me-2"></i> <?php echo __('pay_now'); ?>
                                 </a>
                                 <?php endif; ?>
                                 
                                 <?php if ($order['status'] === 'approved'): ?>
-                                <button type="button" class="btn btn-danger" onclick="openSOSModal(<?php echo (int)$order['id']; ?>, '<?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?>')" title="<?php echo __('emergency_sos'); ?>">
-                                    <i class="fas fa-ambulance"></i> SOS
+                                <button type="button" class="btn btn-danger" onclick="openSOSModal(<?php echo (int)$order['id']; ?>, '<?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?>')">
+                                    <i class="fas fa-ambulance me-2"></i> EMERGENCY SOS
                                 </button>
                                 <?php endif; ?>
 
                                 <?php if ($order['status'] === 'completed'): ?>
                                     <?php if ($order['review_id']): ?>
-                                    <button class="btn btn-secondary" title="<?php echo __('already_reviewed'); ?>" disabled>
-                                        <i class="fas fa-star"></i>
+                                    <button class="btn btn-secondary" disabled>
+                                        <i class="fas fa-check-circle me-2"></i> <?php echo __('already_reviewed'); ?>
                                     </button>
                                     <?php else: ?>
-                                    <a href="<?php echo SITE_URL; ?>/review.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-warning" title="<?php echo __('rate_and_review'); ?>">
-                                        <i class="fas fa-star"></i>
+                                    <a href="<?php echo SITE_URL; ?>/review.php?order_id=<?php echo (int)$order['id']; ?>" class="btn btn-warning fw-bold">
+                                        <i class="fas fa-star me-2"></i> <?php echo __('rate_and_review'); ?>
                                     </a>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                            <div class="text-center mt-3 d-md-none">
+                                <?php echo get_status_badge($order['status']); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        <?php endforeach; ?>
     </div>
     
-    <div class="text-center mt-4">
-        <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-primary">
-            <i class="fas fa-car"></i> <?php echo __('rent_another'); ?>
+    <div class="text-center mt-5">
+        <a href="<?php echo SITE_URL; ?>/cars.php" class="btn btn-primary px-5 py-3 rounded-pill shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i> <?php echo __('rent_another'); ?>
         </a>
     </div>
 <?php endif; ?>

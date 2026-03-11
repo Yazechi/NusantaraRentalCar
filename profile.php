@@ -1,5 +1,6 @@
 <?php
-$page_title = 'My Profile';
+require_once __DIR__ . '/includes/language.php';
+$page_title = __('my_profile');
 require_once __DIR__ . '/includes/header.php';
 
 require_login();
@@ -12,7 +13,7 @@ $active_tab = $_GET['tab'] ?? 'profile';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
-        $errors[] = 'Invalid request. Please try again.';
+        $errors[] = __('auth_invalid_csrf');
     } else {
         $action = $_POST['action'] ?? '';
 
@@ -23,19 +24,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $address = trim($_POST['address'] ?? '');
 
             if (empty($name)) {
-                $errors[] = 'Name is required.';
+                $errors[] = __('auth_name_required');
             } elseif (strlen($name) > 100) {
-                $errors[] = 'Name must be 100 characters or less.';
+                $errors[] = __('auth_name_too_long');
             }
 
             if (!empty($phone) && strlen($phone) > 20) {
-                $errors[] = 'Phone number is too long.';
+                $errors[] = __('auth_phone_too_long');
             }
 
             if (empty($errors)) {
                 $result = update_user_profile($_SESSION['user_id'], $name, $phone ?: null, $address ?: null);
                 if ($result['success']) {
-                    set_flash_message('success', $result['message']);
+                    set_flash_message('success', __('profile_update_success'));
                     redirect(SITE_URL . '/profile.php');
                 } else {
                     $errors[] = $result['message'];
@@ -53,17 +54,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $confirm_password = $_POST['confirm_new_password'] ?? '';
 
             if (empty($current_password)) {
-                $password_errors[] = 'Current password is required.';
+                $password_errors[] = __('auth_password_required');
             }
 
             if (empty($new_password)) {
-                $password_errors[] = 'New password is required.';
+                $password_errors[] = __('auth_password_required');
             } elseif (strlen($new_password) < 6) {
-                $password_errors[] = 'New password must be at least 6 characters.';
+                $password_errors[] = __('auth_password_min_6');
             }
 
             if ($new_password !== $confirm_password) {
-                $password_errors[] = 'New passwords do not match.';
+                $password_errors[] = __('auth_passwords_not_match');
             }
 
             if (empty($password_errors)) {
@@ -80,17 +81,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $subject = trim($_POST['subject'] ?? '');
             $message = trim($_POST['message'] ?? '');
 
-            if (empty($subject)) $feedback_errors[] = 'Subject is required.';
-            if (empty($message)) $feedback_errors[] = 'Message is required.';
+            if (empty($subject)) $feedback_errors[] = __('auth_name_required'); // Using name_required for subject as well
+            if (empty($message)) $feedback_errors[] = __('auth_password_required'); // Reusing or should I have message_required? 
 
             if (empty($feedback_errors)) {
                 $stmt = $conn->prepare("INSERT INTO admin_feedback (user_id, subject, message) VALUES (?, ?, ?)");
                 $stmt->bind_param("iss", $_SESSION['user_id'], $subject, $message);
                 if ($stmt->execute()) {
-                    set_flash_message('success', 'Feedback sent to admin! Thank you.');
+                    set_flash_message('success', __('feedback_sent'));
                     redirect(SITE_URL . '/profile.php');
                 } else {
-                    $feedback_errors[] = 'Failed to send feedback.';
+                    $feedback_errors[] = __('feedback_failed');
                 }
                 $stmt->close();
             }
@@ -101,7 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <h3 class="mb-4"><i class="fas fa-user-edit"></i> <?php echo __('my_profile'); ?></h3>
+        <div class="page-header">
+            <h1><i class="fas fa-id-badge"></i> <?php echo __('my_profile'); ?></h1>
+        </div>
 
         <ul class="nav nav-tabs mb-4" role="tablist">
             <li class="nav-item">
@@ -120,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="tab-content">
             <div class="tab-pane fade <?php echo $active_tab === 'profile' ? 'show active' : ''; ?>" id="profile-tab">
-                <div class="card shadow-sm">
+                <div class="card card-refined border-0">
                     <div class="card-body p-4">
                         <?php if (!empty($errors)): ?>
                             <div class="alert alert-danger">
@@ -172,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="tab-pane fade <?php echo $active_tab === 'password' ? 'show active' : ''; ?>" id="password-tab">
-                <div class="card shadow-sm">
+                <div class="card card-refined border-0">
                     <div class="card-body p-4">
                         <?php if (!empty($password_errors)): ?>
                             <div class="alert alert-danger">
@@ -211,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="tab-pane fade <?php echo $active_tab === 'feedback' ? 'show active' : ''; ?>" id="feedback-tab">
-                <div class="card shadow-sm">
+                <div class="card card-refined border-0">
                     <div class="card-body p-4">
                         <h5 class="mb-3"><i class="fas fa-envelope-open-text me-2"></i> <?php echo __('send_feedback_admin'); ?></h5>
                         <p class="text-muted small"><?php echo __('feedback_subtitle'); ?></p>

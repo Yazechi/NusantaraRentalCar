@@ -74,11 +74,6 @@ foreach ($additional_images_res as $img) {
         $all_images[] = $img['image_path'];
     }
 }
-foreach ($stock_units as $unit) {
-    if (!empty($unit['image_url']) && !in_array($unit['image_url'], $all_images)) {
-        $all_images[] = $unit['image_url'];
-    }
-}
 ?>
 
 <div class="row">
@@ -86,11 +81,11 @@ foreach ($stock_units as $unit) {
         <!-- Main Car Image (Card-Image) -->
         <div class="mb-4">
             <?php if (!empty($all_images)): ?>
-                <div class="card border-0 shadow-sm">
+                <div class="card card-refined border-0 shadow-sm">
                     <img id="mainCarImage" src="<?php echo UPLOAD_URL . sanitize_output($all_images[0]); ?>" class="card-img-top rounded" style="object-fit: cover; height: 400px; transition: opacity 0.3s ease-in-out;" alt="<?php echo sanitize_output($car['name']); ?>">
                 </div>
             <?php else: ?>
-                <div class="card border-0 shadow-sm">
+                <div class="card card-refined border-0 shadow-sm">
                     <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
                         <i class="fas fa-car fa-5x text-white"></i>
                     </div>
@@ -236,9 +231,14 @@ foreach ($stock_units as $unit) {
                         <span><i class="fas fa-user-tie me-1 text-muted"></i> <?php echo __('professional_driver'); ?></span>
                         <span class="text-primary fw-bold">+ Rp 150.000 /<?php echo trim(__('per_day'), '/ '); ?></span>
                     </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span><i class="fas fa-tools me-1 text-muted"></i> <?php echo __('maintenance_toolkit'); ?></span>
-                        <span class="text-primary fw-bold">+ Rp 50.000</span>
+                    <div class="mb-1">
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-tools me-1 text-muted"></i> <?php echo __('maintenance_toolkit'); ?></span>
+                            <span class="text-primary fw-bold">+ Rp 50.000</span>
+                        </div>
+                        <div class="ps-4 small text-success">
+                            <i class="fas fa-plus me-1"></i> <?php echo __('spare_tire'); ?> (<?php echo __('free'); ?>)
+                        </div>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span><i class="fas fa-ambulance me-1 text-muted"></i> <?php echo __('sos_support'); ?></span>

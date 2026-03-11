@@ -44,7 +44,7 @@
 
             <!-- Payment Partners -->
             <div class="footer-partners">
-                <h6 class="footer-heading text-center mb-3"><?php echo get_current_lang() === 'id' ? 'Metode Pembayaran' : 'Payment Partners'; ?></h6>
+                <h6 class="footer-heading text-center mb-3"><?php echo __('footer_payment_methods'); ?></h6>
                 <div class="partner-logos">
                     <img src="<?php echo SITE_URL; ?>/assets/images/payments/bca.png" alt="BCA" title="BCA Virtual Account">
                     <img src="<?php echo SITE_URL; ?>/assets/images/payments/Bni.png" alt="BNI" title="BNI Virtual Account">
@@ -67,7 +67,7 @@
 
             <!-- Bottom bar -->
             <div class="footer-bottom">
-                <small>&copy; <?php echo date('Y'); ?> <span class="brand-text"><?php echo SITE_NAME; ?></span>. All rights reserved.</small>
+                <small>&copy; <?php echo date('Y'); ?> <span class="brand-text"><?php echo SITE_NAME; ?></span>. <?php echo __('footer_all_rights'); ?></small>
                 <small class="footer-powered">Powered by Midtrans</small>
             </div>
         </div>

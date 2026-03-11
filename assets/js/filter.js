@@ -115,7 +115,7 @@ function renderCars(cars) {
 
             html += `
             <div class="col-md-4 mb-4">
-                <div class="deal-card h-100 shadow-sm ${!isAvailable ? 'opacity-75' : ''}">
+                <div class="deal-card card-refined border-0 h-100 shadow-sm ${!isAvailable ? 'opacity-75' : ''}">
                     <div class="deal-image">
                         <img src="${imageUrl}" alt="${car.brand_name} ${car.name}">
                         ${discountBadge}

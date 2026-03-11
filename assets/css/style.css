@@ -490,20 +490,80 @@ footer { margin-top: auto; }
 .section-title {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 2.4rem;
-    letter-spacing: -1px;
-    margin-bottom: 0.5rem;
-    color: var(--dark);
+    font-size: 2.6rem;
+    letter-spacing: -1.5px;
+    margin-bottom: 0.75rem;
+    color: var(--secondary-color);
     line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-title i {
+    color: var(--primary-color);
+    font-size: 0.85em;
+    filter: drop-shadow(0 2px 4px rgba(201, 168, 76, 0.2));
 }
 
 .section-title .gold { color: var(--primary-color); }
 
 .section-subtitle {
-    color: var(--gray);
-    font-size: 1.05rem;
+    color: var(--gray-mid);
+    font-size: 1.1rem;
+    margin-bottom: 3.5rem;
+    max-width: 600px;
+    font-weight: 400;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 20px;
+}
+
+/* Page Header Styles */
+.page-header {
     margin-bottom: 3rem;
-    max-width: 540px;
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.page-header h1, 
+.page-header h2, 
+.page-header h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header h1 i, 
+.page-header h2 i, 
+.page-header h3 i {
+    color: var(--primary-color);
+}
+
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 2px;
+}
+
+.page-header.text-center h1,
+.page-header.text-center h2,
+.page-header.text-center h3 {
+    justify-content: center;
+}
+
+.page-header.text-center::after {
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .section-eyebrow {
@@ -1006,14 +1066,28 @@ footer { margin-top: auto; }
 
 /* ============ General Cards ============ */
 .card {
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     background: var(--white);
-    transition: var(--transition);
+    transition: var(--transition-slow);
+    overflow: hidden;
 }
-.card:hover { box-shadow: var(--shadow-md); }
-.card-body { padding: 26px; }
+.card:hover { 
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+.card-body { padding: 24px; }
+
+/* Refined Card Style */
+.card-refined {
+    border: 1px solid rgba(201, 168, 76, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+.card-refined:hover {
+    box-shadow: 0 15px 40px rgba(201, 168, 76, 0.1);
+    border-color: rgba(201, 168, 76, 0.3);
+}
 
 /* ============ Feature Strip ============ */
 .feature-strip {
@@ -1579,4 +1653,90 @@ main h4, main h5, main h6 {
     .hero-carousel .carousel-item { height: 360px; }
     .hero-carousel .carousel-caption h1 { font-size: 1.8rem; }
     .hero-carousel .carousel-caption p { font-size: 0.95rem; }
+}
+
+/* ============ Universal Background Image (Cars_Background.png) ============ */
+/* Pages with full fixed background */
+body.page-cars,
+body.page-car-detail,
+body.page-order,
+body.page-guide,
+body.page-my-orders,
+body.page-receipt,
+body.page-review,
+body.page-payment {
+    position: relative;
+}
+
+body.page-cars::before,
+body.page-car-detail::before,
+body.page-order::before,
+body.page-guide::before,
+body.page-my-orders::before,
+body.page-receipt::before,
+body.page-review::before,
+body.page-payment::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../images/Cars_Background.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* For homepage lower sections specifically */
+.home-lower-background {
+    position: relative;
+    clip-path: inset(0); /* Necessary for the fixed pseudo-child to be clipped to this container */
+}
+
+.home-lower-background::before {
+    content: '';
+    position: fixed; /* Fixed background that doesn't scroll */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../images/Cars_Background.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    z-index: 0;
+    pointer-events: none;
+}
+
+body.page-cars main,
+body.page-car-detail main,
+body.page-order main,
+body.page-guide main,
+body.page-my-orders main,
+body.page-receipt main,
+body.page-review main,
+body.page-payment main,
+.home-lower-background > * {
+    position: relative;
+    z-index: 1; /* Content above background */
+}
+
+/* Ensure cards and surfaces have solid background to stand out */
+.page-cars .deal-card,
+.page-car-detail .card,
+.page-my-orders .card,
+.page-receipt .card,
+.page-review .card,
+.page-payment .card,
+.home-lower-background .deal-card,
+.home-lower-background .type-card-new,
+.home-lower-background .occasion-card {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
 }

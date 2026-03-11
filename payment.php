@@ -40,9 +40,11 @@ $midtrans_is_production = false;
 
 <div class="row justify-content-center">
     <div class="col-md-8">
+        <div class="page-header text-center">
+            <h1><i class="fas fa-credit-card"></i> <?php echo __('choose_payment'); ?></h1>
+        </div>
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="mb-4"><i class="fas fa-credit-card"></i> <?php echo __('choose_payment'); ?></h3>
                 
                 <!-- Order Summary -->
                 <div class="card mb-4 border">

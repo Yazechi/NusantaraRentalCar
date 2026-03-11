@@ -1,5 +1,6 @@
 <?php
-$page_title = 'Reset Password';
+require_once __DIR__ . '/includes/language.php';
+$page_title = __('reset_password');
 require_once __DIR__ . '/includes/header.php';
 
 if (is_logged_in()) {
@@ -28,19 +29,19 @@ if (!empty($token)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
     if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
-        $errors[] = 'Invalid request. Please try again.';
+        $errors[] = __('auth_invalid_csrf');
     } else {
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
 
         if (empty($new_password)) {
-            $errors[] = 'Password is required.';
+            $errors[] = __('auth_password_required');
         } elseif (strlen($new_password) < 6) {
-            $errors[] = 'Password must be at least 6 characters.';
+            $errors[] = __('auth_password_min_6');
         }
 
         if ($new_password !== $confirm_password) {
-            $errors[] = 'Passwords do not match.';
+            $errors[] = __('auth_passwords_not_match');
         }
 
         if (empty($errors)) {
@@ -50,11 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
             
             if ($stmt->execute()) {
                 $stmt->close();
-                set_flash_message('success', 'Password reset successful! Please login with your new password.');
+                set_flash_message('success', __('reset_password_success'));
                 redirect(SITE_URL . '/login.php');
             } else {
                 $stmt->close();
-                $errors[] = 'Failed to reset password. Please try again.';
+                $errors[] = __('reset_password_failed');
             }
         }
     }
@@ -63,18 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
 
 <div class="row justify-content-center">
     <div class="col-md-5">
+        <div class="page-header text-center">
+            <h1><i class="fas fa-lock"></i> <?php echo __('reset_password'); ?></h1>
+        </div>
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4"><i class="fas fa-lock"></i> Reset Password</h3>
 
                 <?php if (!$valid_token): ?>
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-circle me-2"></i>
-                        Invalid or expired reset link. Please request a new password reset.
+                        <?php echo __('invalid_reset_link'); ?>
                     </div>
                     <div class="text-center">
                         <a href="<?php echo SITE_URL; ?>/forgot-password.php" class="btn btn-primary">
-                            Request New Link
+                            <?php echo __('request_new_link'); ?>
                         </a>
                     </div>
                 <?php else: ?>
@@ -89,25 +92,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
                         </div>
                     <?php endif; ?>
 
-                    <p class="text-muted mb-4">Enter your new password below.</p>
+                    <p class="text-muted mb-4"><?php echo __('enter_new_password'); ?></p>
 
                     <form method="POST" action="">
                         <?php echo csrf_input_field(); ?>
 
                         <div class="mb-3">
-                            <label for="new_password" class="form-label">New Password <span class="text-danger">*</span></label>
+                            <label for="new_password" class="form-label"><?php echo __('new_password'); ?> <span class="text-danger">*</span></label>
                             <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6" autofocus>
-                            <div class="form-text">Minimum 6 characters.</div>
+                            <div class="form-text"><?php echo __('min_6_chars'); ?></div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            <label for="confirm_password" class="form-label"><?php echo __('auth_confirm_password'); ?> <span class="text-danger">*</span></label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check"></i> Reset Password
+                                <i class="fas fa-check"></i> <?php echo __('reset_password'); ?>
                             </button>
                         </div>
                     </form>

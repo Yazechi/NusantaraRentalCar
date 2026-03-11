@@ -7,9 +7,9 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="guide-page">
     <!-- Header -->
-    <div class="guide-header text-center">
-        <h2><i class="fas fa-book-open me-2"></i><?php echo __('guide_title'); ?></h2>
-        <p><?php echo __('guide_subtitle'); ?></p>
+    <div class="page-header text-center">
+        <h1><i class="fas fa-book-open"></i> <?php echo __('guide_title'); ?></h1>
+        <p class="section-subtitle mx-auto mt-2" style="border: none; padding: 0; max-width: 600px;"><?php echo __('guide_subtitle'); ?></p>
     </div>
 
     <!-- Steps Timeline -->

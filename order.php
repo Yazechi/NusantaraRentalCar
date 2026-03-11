@@ -51,9 +51,11 @@ $discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') 
 
 <div class="row justify-content-center">
     <div class="col-md-6">
+        <div class="page-header text-center">
+            <h1><i class="fas fa-clipboard-check"></i> <?php echo __('confirm_rental'); ?></h1>
+        </div>
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="card-title mb-4"><i class="fas fa-shopping-cart"></i> <?php echo __('confirm_rental'); ?></h3>
                 
                 <div class="alert alert-info mb-4">
                     <strong><i class="fas fa-car"></i> <?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></strong><br>
@@ -148,7 +150,10 @@ $discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="has_tools" id="has_tools" value="1">
                                 <label class="form-check-label d-flex justify-content-between" for="has_tools">
-                                    <span><?php echo __('tool_kit_service'); ?></span>
+                                    <span>
+                                        <?php echo __('tool_kit_service'); ?> 
+                                        <span class="badge bg-success ms-1 small"><?php echo __('free'); ?> <?php echo __('spare_tire'); ?></span>
+                                    </span>
                                     <span class="text-primary fw-bold">+ <?php echo format_currency(get_site_setting('tool_kit_fee')); ?></span>
                                 </label>
                             </div>

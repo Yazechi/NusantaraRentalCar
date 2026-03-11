@@ -42,9 +42,11 @@ $stmt->close();
 
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card shadow-sm border-0">
+        <div class="page-header text-center">
+            <h1><i class="fas fa-star text-warning"></i> <?php echo __('rate_your_experience'); ?></h1>
+        </div>
+        <div class="card card-refined border-0">
             <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4"><i class="fas fa-star text-warning me-2"></i> <?php echo __('rate_your_experience'); ?></h3>
                 <p class="text-center text-muted mb-4"><?php echo __('how_was_rental'); ?> <strong><?php echo sanitize_output($order['brand_name'] . ' ' . $order['car_name']); ?></strong>?</p>
 
                 <form action="<?php echo SITE_URL; ?>/api/review.php" method="POST">

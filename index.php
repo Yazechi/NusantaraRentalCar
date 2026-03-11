@@ -174,147 +174,150 @@ $current_lang = get_current_lang();
 </div>
 <?php endif; ?>
 
-<!-- Hot Deals -->
-<?php if (!empty($deal_cars)): ?>
-<div class="section-full section-warm">
-    <div class="container">
-        <h2 class="section-title"><i class="fas fa-fire-alt me-2" style="color: var(--accent-coral);"></i><?php echo __('hot_deals_title'); ?></h2>
-        <p class="section-subtitle"><?php echo __('hot_deals_subtitle'); ?></p>
-        <div class="row g-4">
-            <?php foreach ($deal_cars as $car): 
-                $discounted_price = $car['price_per_day'] * (1 - $car['discount_percent'] / 100);
-            ?>
-            <div class="col-md-6 col-lg-3">
-                <div class="deal-card shadow-sm h-100 <?php echo $car['available_stock'] == 0 ? 'opacity-75' : ''; ?>">
-                    <div class="deal-image">
-                        <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" alt="<?php echo sanitize_output($car['name']); ?>">
-                        <span class="discount-badge"><i class="fas fa-bolt me-1"></i><?php echo (int)$car['discount_percent']; ?>% <?php echo __('discount_badge'); ?></span>
-                        <div style="position:absolute;top:10px;right:10px;">
-                            <?php if($car['available_stock'] > 0): ?>
-                                <span class="badge bg-success shadow-sm"><?php echo __('available'); ?></span>
-                            <?php else: ?>
-                                <span class="badge bg-danger shadow-sm"><?php echo __('unavailable'); ?></span>
-                            <?php endif; ?>
+<!-- Lower Sections with Background -->
+<div class="home-lower-background">
+    <!-- Hot Deals -->
+    <?php if (!empty($deal_cars)): ?>
+    <div class="section-full section-warm bg-transparent">
+        <div class="container">
+            <h2 class="section-title"><i class="fas fa-fire"></i> <?php echo __('hot_deals_title'); ?></h2>
+            <p class="section-subtitle"><?php echo __('hot_deals_subtitle'); ?></p>
+            <div class="row g-4">
+                <?php foreach ($deal_cars as $car): 
+                    $discounted_price = $car['price_per_day'] * (1 - $car['discount_percent'] / 100);
+                ?>
+                <div class="col-md-6 col-lg-3">
+                    <div class="deal-card card-refined border-0 shadow-sm h-100 <?php echo $car['available_stock'] == 0 ? 'opacity-75' : ''; ?>">
+                        <div class="deal-image">
+                            <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" alt="<?php echo sanitize_output($car['name']); ?>">
+                            <span class="discount-badge"><i class="fas fa-bolt me-1"></i><?php echo (int)$car['discount_percent']; ?>% <?php echo __('discount_badge'); ?></span>
+                            <div style="position:absolute;top:10px;right:10px;">
+                                <?php if($car['available_stock'] > 0): ?>
+                                    <span class="badge bg-success shadow-sm"><?php echo __('available'); ?></span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger shadow-sm"><?php echo __('unavailable'); ?></span>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body p-3">
-                        <h6 class="fw-bold mb-1"><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h6>
-                        <?php echo get_stars_html($car['avg_rating'], $car['review_count']); ?>
-                        <div class="mb-2">
-                            <span class="price-original"><?php echo format_currency($car['price_per_day']); ?></span>
-                            <span class="price-discounted"><?php echo format_currency($discounted_price); ?></span>
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold mb-1"><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h6>
+                            <?php echo get_stars_html($car['avg_rating'], $car['review_count']); ?>
+                            <div class="mb-2">
+                                <span class="price-original"><?php echo format_currency($car['price_per_day']); ?></span>
+                                <span class="price-discounted"><?php echo format_currency($discounted_price); ?></span>
+                            </div>
+                            <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn <?php echo $car['available_stock'] > 0 ? 'btn-primary' : 'btn-outline-secondary'; ?> w-100">
+                                <?php echo __('view_details'); ?>
+                            </a>
                         </div>
-                        <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn <?php echo $car['available_stock'] > 0 ? 'btn-primary' : 'btn-outline-secondary'; ?> w-100">
-                            <?php echo __('view_details'); ?>
-                        </a>
                     </div>
                 </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
         </div>
     </div>
-</div>
-<?php endif; ?>
+    <?php endif; ?>
 
-<!-- Featured Cars -->
-<?php if (!empty($featured_cars)): ?>
-<div class="section-full">
-    <div class="container">
-        <h2 class="section-title"><i class="fas fa-star me-2" style="color: var(--secondary-color);"></i><?php echo __('featured_title'); ?></h2>
-        <p class="section-subtitle"><?php echo __('featured_subtitle'); ?></p>
-        <div class="row g-4">
-            <?php foreach ($featured_cars as $car): 
-                $has_discount = $car['discount_percent'] > 0;
-                $discounted_price = $has_discount ? $car['price_per_day'] * (1 - $car['discount_percent'] / 100) : $car['price_per_day'];
-            ?>
-            <div class="col-md-6 col-lg-4">
-                <div class="deal-card shadow-sm h-100 <?php echo $car['available_stock'] == 0 ? 'opacity-75' : ''; ?>">
-                    <div class="deal-image">
-                        <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" alt="<?php echo sanitize_output($car['name']); ?>">
-                        <?php if ($has_discount): ?>
-                        <span class="discount-badge"><?php echo (int)$car['discount_percent']; ?>% <?php echo __('discount_badge'); ?></span>
-                        <?php endif; ?>
-                        <div style="position:absolute;top:10px;right:10px;">
-                            <?php if($car['available_stock'] > 0): ?>
-                                <span class="badge bg-success shadow-sm"><?php echo __('available'); ?></span>
-                            <?php else: ?>
-                                <span class="badge bg-danger shadow-sm"><?php echo __('unavailable'); ?></span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="card-body p-3">
-                        <h5 class="fw-bold mb-1"><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h5>
-                        <?php echo get_stars_html($car['avg_rating'], $car['review_count']); ?>
-                        <p class="text-muted small mb-2">
-                            <i class="fas fa-cog"></i> <?php echo ucfirst(sanitize_output($car['transmission'])); ?> |
-                            <i class="fas fa-users"></i> <?php echo (int)$car['seats']; ?> <?php echo __('seats'); ?>
-                        </p>
-                        <div class="mb-2">
+    <!-- Featured Cars -->
+    <?php if (!empty($featured_cars)): ?>
+    <div class="section-full bg-transparent">
+        <div class="container">
+            <h2 class="section-title"><i class="fas fa-car-side"></i> <?php echo __('featured_title'); ?></h2>
+            <p class="section-subtitle"><?php echo __('featured_subtitle'); ?></p>
+            <div class="row g-4">
+                <?php foreach ($featured_cars as $car): 
+                    $has_discount = $car['discount_percent'] > 0;
+                    $discounted_price = $has_discount ? $car['price_per_day'] * (1 - $car['discount_percent'] / 100) : $car['price_per_day'];
+                ?>
+                <div class="col-md-6 col-lg-4">
+                    <div class="deal-card card-refined border-0 shadow-sm h-100 <?php echo $car['available_stock'] == 0 ? 'opacity-75' : ''; ?>">
+                        <div class="deal-image">
+                            <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" alt="<?php echo sanitize_output($car['name']); ?>">
                             <?php if ($has_discount): ?>
-                            <span class="price-original"><?php echo format_currency($car['price_per_day']); ?></span>
-                            <span class="price-discounted"><?php echo format_currency($discounted_price); ?></span>
-                            <?php else: ?>
-                            <span class="price-normal"><?php echo format_currency($car['price_per_day']); ?></span>
+                            <span class="discount-badge"><?php echo (int)$car['discount_percent']; ?>% <?php echo __('discount_badge'); ?></span>
                             <?php endif; ?>
+                            <div style="position:absolute;top:10px;right:10px;">
+                                <?php if($car['available_stock'] > 0): ?>
+                                    <span class="badge bg-success shadow-sm"><?php echo __('available'); ?></span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger shadow-sm"><?php echo __('unavailable'); ?></span>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn <?php echo $car['available_stock'] > 0 ? 'btn-primary' : 'btn-outline-secondary'; ?> w-100"><?php echo __('view_details'); ?></a>
+                        <div class="card-body p-3">
+                            <h5 class="fw-bold mb-1"><?php echo sanitize_output($car['brand_name'] . ' ' . $car['name']); ?></h5>
+                            <?php echo get_stars_html($car['avg_rating'], $car['review_count']); ?>
+                            <p class="text-muted small mb-2">
+                                <i class="fas fa-cog"></i> <?php echo ucfirst(sanitize_output($car['transmission'])); ?> |
+                                <i class="fas fa-users"></i> <?php echo (int)$car['seats']; ?> <?php echo __('seats'); ?>
+                            </p>
+                            <div class="mb-2">
+                                <?php if ($has_discount): ?>
+                                <span class="price-original"><?php echo format_currency($car['price_per_day']); ?></span>
+                                <span class="price-discounted"><?php echo format_currency($discounted_price); ?></span>
+                                <?php else: ?>
+                                <span class="price-normal"><?php echo format_currency($car['price_per_day']); ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <a href="<?php echo SITE_URL; ?>/car-detail.php?id=<?php echo (int)$car['id']; ?>" class="btn <?php echo $car['available_stock'] > 0 ? 'btn-primary' : 'btn-outline-secondary'; ?> w-100"><?php echo __('view_details'); ?></a>
+                        </div>
                     </div>
                 </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
         </div>
     </div>
-</div>
-<?php endif; ?>
+    <?php endif; ?>
 
-<!-- Browse by Type -->
-<?php if (!empty($car_types)): ?>
-<div class="section-full section-gray">
-    <div class="container">
-        <h2 class="section-title"><i class="fas fa-th-large me-2"></i><?php echo __('browse_by_type'); ?></h2>
-        <div class="row g-3">
-            <?php foreach ($car_types as $type): ?>
-            <div class="col-lg-2 col-md-3 col-4">
-                <a href="<?php echo SITE_URL; ?>/cars.php?type=<?php echo (int)$type['id']; ?>" class="text-decoration-none">
-                    <div class="type-card-new shadow-sm">
-                        <div class="type-icon"><i class="<?php echo sanitize_output($type['icon']); ?>"></i></div>
-                        <h6><?php echo sanitize_output($type['name']); ?></h6>
-                        <small class="text-muted"><?php echo (int)$type['car_count']; ?> <?php echo __('nav_cars'); ?></small>
-                    </div>
-                </a>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
-<!-- Browse by Occasion -->
-<?php if (!empty($rental_goals)): ?>
-<div class="section-full">
-    <div class="container">
-        <h2 class="section-title"><i class="fas fa-calendar-check me-2"></i><?php echo __('rent_for_occasion'); ?></h2>
-        <div class="row g-3">
-            <?php foreach ($rental_goals as $goal): ?>
-            <div class="col-lg-3 col-md-4 col-6">
-                <a href="<?php echo SITE_URL; ?>/cars.php?goal=<?php echo (int)$goal['id']; ?>" class="text-decoration-none">
-                    <div class="occasion-card shadow-sm">
-                        <?php if (!empty($goal['image'])): ?>
-                        <div class="occasion-img" style="background-image: url('<?php echo SITE_URL; ?>/assets/images/rental-goals/<?php echo rawurlencode($goal['image']); ?>')"></div>
-                        <?php endif; ?>
-                        <div class="occasion-info">
-                            <?php $g_key = 'goal_' . str_replace([' & ', '-', ' '], ['_', '', '_'], strtolower($goal['name'])); ?>
-                            <h6><i class="<?php echo sanitize_output($goal['icon']); ?> me-1"></i> <?php echo sanitize_output(__($g_key) !== $g_key ? __($g_key) : $goal['name']); ?></h6>
-                            <small class="text-muted"><?php echo (int)$goal['car_count']; ?> <?php echo __('nav_cars'); ?></small>
+    <!-- Browse by Type -->
+    <?php if (!empty($car_types)): ?>
+    <div class="section-full section-gray bg-transparent">
+        <div class="container">
+            <h2 class="section-title"><i class="fas fa-layer-group"></i> <?php echo __('browse_by_type'); ?></h2>
+            <div class="row g-3">
+                <?php foreach ($car_types as $type): ?>
+                <div class="col-lg-2 col-md-3 col-4">
+                    <a href="<?php echo SITE_URL; ?>/cars.php?type=<?php echo (int)$type['id']; ?>" class="text-decoration-none">
+                        <div class="type-card-new card-refined border-0 shadow-sm">
+                            <div class="type-icon"><i class="<?php echo sanitize_output($type['icon']); ?>"></i></div>
+                            <h6><?php echo sanitize_output($type['name']); ?></h6>
+                            <small class="text-muted"><?php echo (int)$type['car_count']; ?> <?php echo __('nav_cars'); ?></small>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
+
+    <!-- Browse by Occasion -->
+    <?php if (!empty($rental_goals)): ?>
+    <div class="section-full bg-transparent">
+        <div class="container">
+            <h2 class="section-title"><i class="fas fa-map-marked-alt"></i> <?php echo __('rent_for_occasion'); ?></h2>
+            <div class="row g-3">
+                <?php foreach ($rental_goals as $goal): ?>
+                <div class="col-lg-3 col-md-4 col-6">
+                    <a href="<?php echo SITE_URL; ?>/cars.php?goal=<?php echo (int)$goal['id']; ?>" class="text-decoration-none">
+                        <div class="occasion-card card-refined border-0 shadow-sm">
+                            <?php if (!empty($goal['image'])): ?>
+                            <div class="occasion-img" style="background-image: url('<?php echo SITE_URL; ?>/assets/images/rental-goals/<?php echo rawurlencode($goal['image']); ?>')"></div>
+                            <?php endif; ?>
+                            <div class="occasion-info">
+                                <?php $g_key = 'goal_' . str_replace([' & ', '-', ' '], ['_', '', '_'], strtolower($goal['name'])); ?>
+                                <h6><i class="<?php echo sanitize_output($goal['icon']); ?> me-1"></i> <?php echo sanitize_output(__($g_key) !== $g_key ? __($g_key) : $goal['name']); ?></h6>
+                                <small class="text-muted"><?php echo (int)$goal['car_count']; ?> <?php echo __('nav_cars'); ?></small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
-<?php endif; ?>
 
 <!-- Stats, CTA, and Scripts remain same -->
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

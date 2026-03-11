@@ -123,7 +123,7 @@ $stmt->close();
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Image</th>
+                        <th><?php echo __('admin_main_image'); ?></th>
                         <th><?php echo __('admin_brand'); ?></th>
                         <th><?php echo __('admin_car_name'); ?></th>
                         <th><?php echo __('admin_model'); ?></th>
@@ -136,7 +136,7 @@ $stmt->close();
                 <tbody>
                     <?php if (empty($cars)): ?>
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox"></i> <?php echo __('admin_no_cars_found'); ?>
                             </td>
                         </tr>
@@ -166,15 +166,15 @@ $stmt->close();
                                 <td>
                                     <div class="d-flex gap-2 flex-wrap">
                                         <a href="<?php echo SITE_URL; ?>/admin/car-stock.php?car_id=<?php echo $car['id']; ?>" class="btn btn-sm btn-info" title="<?php echo __('admin_manage_stock_units'); ?>">
-                                            <i class="fas fa-boxes me-1"></i> Stock
+                                            <i class="fas fa-boxes me-1"></i> <?php echo __('admin_stock_label'); ?>
                                         </a>
                                         <a href="<?php echo SITE_URL; ?>/admin/car-edit.php?id=<?php echo $car['id']; ?>"
                                             class="btn btn-sm btn-primary">
-                                            <i class="fas fa-edit me-1"></i> Edit
+                                            <i class="fas fa-edit me-1"></i> <?php echo __('admin_edit'); ?>
                                         </a>
                                         <button class="btn btn-sm btn-danger" data-bs-toggle="modal"
                                             data-bs-target="#deleteModal<?php echo $car['id']; ?>">
-                                            <i class="fas fa-trash me-1"></i> Delete
+                                            <i class="fas fa-trash me-1"></i> <?php echo __('admin_delete'); ?>
                                         </button>
                                     </div>
                                 </td>
@@ -189,8 +189,7 @@ $stmt->close();
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Are you sure you want to delete <strong><?php echo sanitize_output($car['name']); ?></strong>?</p>
-                                            <p class="text-muted small">This action cannot be undone.</p>
+                                            <p><?php echo __('admin_confirm_delete_car'); ?> (<strong><?php echo sanitize_output($car['name']); ?></strong>)</p>
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo __('admin_cancel'); ?></button>
@@ -217,7 +216,7 @@ $stmt->close();
             <ul class="pagination justify-content-center">
                 <?php if ($page > 1): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?page=<?php echo $page - 1; ?>">Previous</a>
+                        <a class="page-link" href="?page=<?php echo $page - 1; ?>"><?php echo __('admin_previous'); ?></a>
                     </li>
                 <?php endif; ?>
 
@@ -229,7 +228,7 @@ $stmt->close();
 
                 <?php if ($page < $total_pages): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?page=<?php echo $page + 1; ?>">Next</a>
+                        <a class="page-link" href="?page=<?php echo $page + 1; ?>"><?php echo __('admin_next'); ?></a>
                     </li>
                 <?php endif; ?>
             </ul>

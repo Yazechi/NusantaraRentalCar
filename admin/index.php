@@ -23,16 +23,16 @@ $page_title = __('admin_login');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF token validation
     if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
-        $error_message = 'Security validation failed. Please try again.';
+        $error_message = __('security_validation_failed');
     } else {
         // Sanitize dan validasi input
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
         if (empty($email) || empty($password)) {
-            $error_message = 'Email and password are required.';
+            $error_message = __('admin_email_required');
         } elseif (!validate_email($email)) {
-            $error_message = 'Invalid email format.';
+            $error_message = __('admin_invalid_email');
         } else {
             // Attempt login
             $login_result = login_user($email, $password);
@@ -47,10 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // User tried to login ke admin tapi bukan admin
                     $_SESSION['user_id'] = null;
                     session_destroy();
-                    $error_message = 'Only administrators can access this panel.';
+                    $error_message = __('admin_not_admin');
                 }
             } else {
-                $error_message = $login_result['message'] ?? 'Login failed.';
+                $error_message = $login_result['message'] ?? __('admin_login_failed');
             }
         }
     }

@@ -1,5 +1,6 @@
 <?php
-$page_title = 'Forgot Password';
+require_once __DIR__ . '/includes/language.php';
+$page_title = __('forgot_password');
 require_once __DIR__ . '/includes/header.php';
 
 if (is_logged_in()) {
@@ -12,14 +13,14 @@ $email = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
-        $errors[] = 'Invalid request. Please try again.';
+        $errors[] = __('auth_invalid_csrf');
     } else {
         $email = trim($_POST['email'] ?? '');
 
         if (empty($email)) {
-            $errors[] = 'Email is required.';
+            $errors[] = __('auth_email_required');
         } elseif (!validate_email($email)) {
-            $errors[] = 'Please enter a valid email address.';
+            $errors[] = __('auth_invalid_email');
         }
 
         if (empty($errors)) {
@@ -56,19 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="row justify-content-center">
     <div class="col-md-5">
+        <div class="page-header text-center">
+            <h1><i class="fas fa-key"></i> <?php echo __('forgot_password'); ?></h1>
+        </div>
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="card-title text-center mb-4"><i class="fas fa-key"></i> Forgot Password</h3>
 
                 <?php if ($success): ?>
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle me-2"></i>
-                        If an account exists with that email, we've sent password reset instructions.
-                        Please check your email inbox (and spam folder).
+                        <?php echo __('forgot_password_instructions'); ?>
                     </div>
                     <div class="text-center mt-3">
                         <a href="<?php echo SITE_URL; ?>/login.php" class="btn btn-primary">
-                            <i class="fas fa-arrow-left"></i> Back to Login
+                            <i class="fas fa-arrow-left"></i> <?php echo __('back_to_login'); ?>
                         </a>
                     </div>
                 <?php else: ?>
@@ -83,26 +85,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     <?php endif; ?>
 
-                    <p class="text-muted mb-4">Enter your email address and we'll send you a link to reset your password.</p>
+                    <p class="text-muted mb-4"><?php echo __('forgot_password_desc'); ?></p>
 
                     <form method="POST" action="">
                         <?php echo csrf_input_field(); ?>
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
+                            <label for="email" class="form-label"><?php echo __('email'); ?></label>
                             <input type="email" class="form-control" id="email" name="email"
                                    value="<?php echo sanitize_output($email); ?>" required autofocus>
                         </div>
 
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Send Reset Link
+                                <i class="fas fa-paper-plane"></i> <?php echo __('send_reset_link'); ?>
                             </button>
                         </div>
 
                         <div class="text-center">
                             <a href="<?php echo SITE_URL; ?>/login.php" class="text-muted">
-                                <i class="fas fa-arrow-left"></i> Back to Login
+                                <i class="fas fa-arrow-left"></i> <?php echo __('back_to_login'); ?>
                             </a>
                         </div>
                     </form>
