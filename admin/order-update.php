@@ -54,30 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 $stmt->close();
-                
-                // If completed or cancelled, mark the stock unit as available again
-                if (in_array($new_status, ['completed', 'cancelled'])) {
-                    $stock_stmt = $conn->prepare("UPDATE car_stock SET status = 'available' WHERE id = (SELECT car_stock_id FROM orders WHERE id = ?)");
-                    $stock_stmt->bind_param("i", $order_id);
-                    $stock_stmt->execute();
-                    $stock_stmt->close();
-                }
-                // If approved, ensure stock unit is marked as rented
-                if ($new_status === 'approved') {
-                    $stock_stmt = $conn->prepare("UPDATE car_stock SET status = 'rented' WHERE id = (SELECT car_stock_id FROM orders WHERE id = ?)");
-                    $stock_stmt->bind_param("i", $order_id);
-                    $stock_stmt->execute();
-                    $stock_stmt->close();
-                }
-                
+
+                // Order status email notification could be added here
+
                 set_flash_message('success', 'Order status updated successfully.');
                 redirect(SITE_URL . '/admin/order-detail.php?id=' . $order_id);
                 exit;
             } else {
                 $error_message = 'Failed to update order status.';
                 $stmt->close();
-            }
-        }
+            }        }
     }
 }
 

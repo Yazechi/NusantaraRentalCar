@@ -221,6 +221,15 @@ return [
     'completed' => 'Selesai',
     'website' => 'Website',
     'whatsapp' => 'WhatsApp',
+    'optional' => 'Opsional',
+    'select_car_unit' => 'Pilih Unit Mobil',
+    'any_available_unit' => 'Unit Tersedia Manapun',
+    'choose_specific_unit' => 'Pilih warna/nomor plat tertentu jika diinginkan.',
+    'admin_additional_photos' => 'Tambah Foto Lain (Interior, Sudut)',
+    'admin_multiple_photos_hint' => 'Anda bisa memilih beberapa file sekaligus.',
+    'admin_manage_additional_photos' => 'Kelola Foto Tambahan',
+    'admin_confirm_delete_image' => 'Hapus gambar ini?',
+    'admin_delete_image' => 'Hapus Gambar',
 
     // Admin Panel
     'admin_dashboard' => 'Dasbor',

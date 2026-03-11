@@ -30,11 +30,16 @@ if (!empty($_GET['type'])) {
 
 // Seats filter
 if (!empty($_GET['seats'])) {
-    $seats = filter_var($_GET['seats'], FILTER_VALIDATE_INT);
-    if ($seats) {
-        $where[] = "c.seats = ?";
-        $params[] = $seats;
-        $types .= "i";
+    $seats_input = $_GET['seats'];
+    if ($seats_input === '8+') {
+        $where[] = "c.seats >= 8";
+    } else {
+        $seats = filter_var($seats_input, FILTER_VALIDATE_INT);
+        if ($seats) {
+            $where[] = "c.seats = ?";
+            $params[] = $seats;
+            $types .= "i";
+        }
     }
 }
 
@@ -77,7 +82,7 @@ $where_sql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 $sql = "SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         c.discount_percent,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
-        (SELECT GROUP_CONCAT(cs.plate_number SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
+        (SELECT GROUP_CONCAT(CONCAT(cs.plate_number, IF(cs.color IS NOT NULL AND cs.color != '', CONCAT(' - ', cs.color), '')) SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id) AS total_stock,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count

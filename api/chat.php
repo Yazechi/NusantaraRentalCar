@@ -36,13 +36,13 @@ try {
     if ($use_ai) {
         $reply = getGeminiResponse($userMessage, $cars_context, $gemini_api_key);
         // Extract car IDs mentioned in the response
-        $recommended_cars = extractMentionedCars($reply, $conn);
+        $recommended_cars = extractMentionedCars($reply, $userMessage, $conn);
     }
 
     // Fallback to enhanced keyword matching if AI fails or not configured
     if (empty($reply)) {
         $reply = getKeywordResponse($userMessage, $conn);
-        $recommended_cars = extractMentionedCars($reply, $conn);
+        $recommended_cars = extractMentionedCars($reply, $userMessage, $conn);
     }
 
     // Save chat history
@@ -74,21 +74,20 @@ try {
 function getCarsContext() {
     global $conn;
     
-    $stmt = $conn->prepare("
-        SELECT 
-            c.id,
-            c.name, 
-            cb.name AS brand_name,
-            ct.name AS type_name,
-            c.seats,
-            c.transmission,
-            c.fuel_type,
-            c.color,
-            c.price_per_day,
-            c.year,
-            c.description,
-            GROUP_CONCAT(DISTINCT rg.name SEPARATOR ', ') AS rental_goals,
-            (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') as available_stock
+    $stmt = $conn->prepare("SELECT 
+        c.id,
+        c.name,
+        cb.name AS brand_name,
+        ct.name AS type_name,
+        c.seats,
+        c.transmission,
+        c.fuel_type,
+        (SELECT GROUP_CONCAT(DISTINCT color SEPARATOR ', ') FROM car_stock WHERE car_id = c.id) AS color,
+        c.price_per_day,
+        c.year,
+        c.description,
+        GROUP_CONCAT(DISTINCT rg.name SEPARATOR ', ') AS rental_goals,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') as available_stock
         FROM cars c
         JOIN car_brands cb ON c.brand_id = cb.id
         LEFT JOIN car_types ct ON c.type_id = ct.id
@@ -260,7 +259,7 @@ function getKeywordResponse($userMessage, $conn) {
     ];
     foreach ($type_keywords as $keyword => $type_name) {
         if (strpos($userMessage, $keyword) !== false) {
-            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, c.color 
+            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, (SELECT GROUP_CONCAT(DISTINCT color SEPARATOR ', ') FROM car_stock WHERE car_id = c.id) AS color 
                 FROM cars c JOIN car_brands cb ON c.brand_id = cb.id JOIN car_types ct ON c.type_id = ct.id 
                 WHERE ct.name = ? AND c.is_available = 1 LIMIT 3");
             $stmt->bind_param("s", $type_name);
@@ -295,7 +294,7 @@ function getKeywordResponse($userMessage, $conn) {
     ];
     foreach ($goal_keywords as $keyword => $goal_name) {
         if (strpos($userMessage, $keyword) !== false) {
-            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, c.color
+            $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day, (SELECT GROUP_CONCAT(DISTINCT color SEPARATOR ', ') FROM car_stock WHERE car_id = c.id) AS color
                 FROM cars c JOIN car_brands cb ON c.brand_id = cb.id 
                 JOIN car_rental_goals crg ON c.id = crg.car_id 
                 JOIN rental_goals rg ON crg.rental_goal_id = rg.id
@@ -326,7 +325,7 @@ function getKeywordResponse($userMessage, $conn) {
         if (strpos($userMessage, $keyword) !== false) {
             $stmt = $conn->prepare("SELECT c.name, cb.name AS brand_name, c.price_per_day
                 FROM cars c JOIN car_brands cb ON c.brand_id = cb.id 
-                WHERE c.color = ? AND c.is_available = 1 LIMIT 3");
+                WHERE c.id IN (SELECT car_id FROM car_stock WHERE color = ?) AND c.is_available = 1 LIMIT 3");
             $stmt->bind_param("s", $color_name);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -448,46 +447,86 @@ function getKeywordResponse($userMessage, $conn) {
 /**
  * Extract car information mentioned in the AI response
  */
-function extractMentionedCars($response, $conn) {
+function extractMentionedCars($response, $userMessage, $conn) {
     $cars = [];
-    
+
+    // Check if the user mentioned a specific color in their query
+    $requested_color = null;
+    $colors = ['merah' => 'Red', 'red' => 'Red', 'hitam' => 'Black', 'black' => 'Black', 
+               'putih' => 'White', 'white' => 'White', 'biru' => 'Blue', 'blue' => 'Blue',
+               'silver' => 'Silver', 'grey' => 'Grey', 'abu' => 'Grey', 'green' => 'Green', 
+               'hijau' => 'Green', 'orange' => 'Orange', 'pink' => 'Pink'];
+
+    foreach ($colors as $keyword => $color_name) {
+        if (stripos($userMessage, $keyword) !== false) {
+            $requested_color = $color_name;
+            break;
+        }
+    }
+
     try {
         // Get all available cars to match against
         $stmt = $conn->prepare("
             SELECT c.id, c.name, cb.name AS brand_name, c.image_main, c.price_per_day, c.year,
             (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') as available_stock
-            FROM cars c 
-            JOIN car_brands cb ON c.brand_id = cb.id 
+            FROM cars c
+            JOIN car_brands cb ON c.brand_id = cb.id
             WHERE c.is_available = 1
         ");
-        
+
         if (!$stmt) {
             error_log("extractMentionedCars SQL error: " . $conn->error);
             return [];
         }
-        
+
         $stmt->execute();
         $result = $stmt->get_result();
         $allCars = $result->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
-        
+
         // Check which cars are mentioned in the response
         foreach ($allCars as $car) {
             $fullName = $car['brand_name'] . ' ' . $car['name'];
-            
+
             // Check if car is mentioned in response (case-insensitive)
-            if (stripos($response, $fullName) !== false || 
+            if (stripos($response, $fullName) !== false ||
                 stripos($response, $car['name']) !== false) {
+
+                $img_to_use = $car['image_main']; // Default to main image
+
+                // If a specific color was requested, try to find an image for that exact color stock
+                if ($requested_color) {
+                    $color_stmt = $conn->prepare("SELECT image_url FROM car_stock WHERE car_id = ? AND color LIKE ? AND image_url IS NOT NULL AND image_url != '' LIMIT 1");
+                    $like_color = '%' . $requested_color . '%';
+                    $color_stmt->bind_param("is", $car['id'], $like_color);
+                    $color_stmt->execute();
+                    $color_res = $color_stmt->get_result()->fetch_assoc();
+                    if ($color_res && !empty($color_res['image_url'])) {
+                        $img_to_use = $color_res['image_url'];
+                    }
+                    $color_stmt->close();
+                } else {
+                    // Otherwise, just try to get ANY stock image if available
+                    $stock_stmt = $conn->prepare("SELECT image_url FROM car_stock WHERE car_id = ? AND image_url IS NOT NULL AND image_url != '' LIMIT 1");
+                    $stock_stmt->bind_param("i", $car['id']);
+                    $stock_stmt->execute();
+                    $stock_res = $stock_stmt->get_result()->fetch_assoc();
+                    if ($stock_res && !empty($stock_res['image_url'])) {
+                        $img_to_use = $stock_res['image_url'];
+                    }
+                    $stock_stmt->close();
+                }
+
                 $cars[] = [
                     'id' => $car['id'],
                     'name' => $car['name'],
                     'brand' => $car['brand_name'],
-                    'image' => 'uploads/cars/' . $car['image_main'],
+                    'image' => 'uploads/cars/' . $img_to_use,
                     'price' => number_format($car['price_per_day'], 0, ',', '.'),
                     'year' => $car['year'],
                     'stock' => (int)$car['available_stock']
                 ];
-                
+
                 // Limit to 6 cars max in display
                 if (count($cars) >= 6) break;
             }
@@ -495,6 +534,6 @@ function extractMentionedCars($response, $conn) {
     } catch (Exception $e) {
         error_log("extractMentionedCars error: " . $e->getMessage());
     }
-    
+
     return $cars;
 }

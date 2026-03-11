@@ -221,6 +221,15 @@ return [
     'completed' => 'Completed',
     'website' => 'Website',
     'whatsapp' => 'WhatsApp',
+    'optional' => 'Optional',
+    'select_car_unit' => 'Select Car Unit',
+    'any_available_unit' => 'Any Available Unit',
+    'choose_specific_unit' => 'Choose a specific color/plate number if preferred.',
+    'admin_additional_photos' => 'Add More Photos (Interior, Angles)',
+    'admin_multiple_photos_hint' => 'You can select multiple files at once.',
+    'admin_manage_additional_photos' => 'Manage Additional Photos',
+    'admin_confirm_delete_image' => 'Delete this image?',
+    'admin_delete_image' => 'Delete Image',
 
     // Admin Panel
     'admin_dashboard' => 'Dashboard',

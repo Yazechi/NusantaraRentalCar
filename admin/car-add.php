@@ -63,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Insert car
             $stmt = $conn->prepare("
-                INSERT INTO cars (brand_id, type_id, name, model, year, seats, transmission, fuel_type, is_electric, color, price_per_day, description, discount_percent, is_featured, is_available)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                INSERT INTO cars (brand_id, type_id, name, model, year, seats, transmission, fuel_type, is_electric, price_per_day, description, discount_percent, is_featured, is_available)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ");
-            $stmt->bind_param("iississsisdsii", $brand_id, $type_id, $name, $model, $year, $seats, $transmission, $fuel_type, $is_electric, $color, $price_per_day, $description, $discount_percent, $is_featured);
+            $stmt->bind_param("iissiissidsii", $brand_id, $type_id, $name, $model, $year, $seats, $transmission, $fuel_type, $is_electric, $price_per_day, $description, $discount_percent, $is_featured);
 
             if ($stmt->execute()) {
                 $car_id = $stmt->insert_id;
@@ -85,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Create first stock unit if plate number provided
                 if (!empty($plate_number)) {
-                    $stock_stmt = $conn->prepare("INSERT INTO car_stock (car_id, plate_number, status) VALUES (?, ?, 'available')");
-                    $stock_stmt->bind_param("is", $car_id, $plate_number);
+                    $stock_stmt = $conn->prepare("INSERT INTO car_stock (car_id, plate_number, color, status) VALUES (?, ?, ?, 'available')");
+                    $stock_stmt->bind_param("iss", $car_id, $plate_number, $color);
                     $stock_stmt->execute();
                     $stock_stmt->close();
                 }

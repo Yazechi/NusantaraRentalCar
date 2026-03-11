@@ -27,12 +27,26 @@ if (!$car) {
     redirect(SITE_URL . '/cars.php');
 }
 
+// Get available stocks for this car
+$stmt_stock = $conn->prepare("SELECT id, plate_number, color, image_url FROM car_stock WHERE car_id = ? AND status = 'available'");
+$stmt_stock->bind_param("i", $car_id);
+$stmt_stock->execute();
+$available_stocks = $stmt_stock->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_stock->close();
+
 // Check if this is the user's first order
 $stmt_first = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND status IN ('approved','completed')");
 $stmt_first->bind_param("i", $_SESSION['user_id']);
 $stmt_first->execute();
 $is_first_order = $stmt_first->get_result()->fetch_assoc()['cnt'] == 0;
 $stmt_first->close();
+
+// Fetch discount settings
+$discount_weekend_pct = (int)get_site_setting('discount_weekend_pct') ?: 25;
+$discount_first_order_pct = (int)get_site_setting('discount_first_order_pct') ?: 15;
+$discount_long_rental_pct = (int)get_site_setting('discount_long_rental_pct') ?: 20;
+$discount_family_pct = (int)get_site_setting('discount_family_pct') ?: 10;
+$discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') ?: 7;
 ?>
 
 <div class="row justify-content-center">
@@ -62,6 +76,25 @@ $stmt_first->close();
                         <label for="duration" class="form-label"><?php echo __('duration_days'); ?> <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="duration" name="duration_days" min="1" max="30" placeholder="<?php echo __('duration_placeholder'); ?>" required>
                     </div>
+
+                    <?php if (count($available_stocks) > 1): ?>
+                    <div class="mb-3">
+                        <label for="car_stock_id" class="form-label"><?php echo __('select_car_unit'); ?> (<?php echo __('optional'); ?>)</label>
+                        <select class="form-select" id="car_stock_id" name="car_stock_id">
+                            <option value="" data-img=""><?php echo __('any_available_unit'); ?></option>
+                            <?php foreach ($available_stocks as $stock): ?>
+                                <option value="<?php echo $stock['id']; ?>" data-img="<?php echo !empty($stock['image_url']) ? SITE_URL . '/uploads/cars/' . sanitize_output($stock['image_url']) : ''; ?>">
+                                    <?php echo sanitize_output($stock['plate_number']); ?> 
+                                    <?php if (!empty($stock['color'])) echo ' - ' . sanitize_output($stock['color']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted"><?php echo __('choose_specific_unit'); ?></small>
+                        <div id="unitImagePreview" class="mt-2" style="display:none;">
+                            <img src="" alt="Unit Photo" class="img-thumbnail" style="max-height: 150px; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="mb-3">
                         <label for="delivery_option" class="form-label"><?php echo __('delivery_option'); ?></label>
@@ -168,11 +201,27 @@ const discountDesc = document.getElementById('discountDesc');
 const isFirstOrder = <?php echo $is_first_order ? 'true' : 'false'; ?>;
 
 const discountDefs = {
-    weekend:    { pct: 25, label: '<?php echo __("discount_weekend"); ?>', desc: '<?php echo __("discount_weekend_desc"); ?>' },
-    first_order:{ pct: 15, label: '<?php echo __("discount_first_order"); ?>', desc: '<?php echo __("discount_first_order_desc"); ?>' },
-    long_rental:{ pct: 20, label: '<?php echo __("discount_long_rental"); ?>', desc: '<?php echo __("discount_long_rental_desc"); ?>' },
-    family:     { pct: 10, label: '<?php echo __("discount_family"); ?>', desc: '<?php echo __("discount_family_desc"); ?>' }
+    weekend:    { pct: <?php echo $discount_weekend_pct; ?>, label: '<?php echo __("discount_weekend"); ?>', desc: '<?php echo __("discount_weekend_desc"); ?>' },
+    first_order:{ pct: <?php echo $discount_first_order_pct; ?>, label: '<?php echo __("discount_first_order"); ?>', desc: '<?php echo __("discount_first_order_desc"); ?>' },
+    long_rental:{ pct: <?php echo $discount_long_rental_pct; ?>, label: '<?php echo __("discount_long_rental"); ?>', desc: '<?php echo __("discount_long_rental_desc"); ?>', minDays: <?php echo $discount_long_rental_days; ?> },
+    family:     { pct: <?php echo $discount_family_pct; ?>, label: '<?php echo __("discount_family"); ?>', desc: '<?php echo __("discount_family_desc"); ?>' }
 };
+
+// Handle unit image preview
+const carStockSelect = document.getElementById('car_stock_id');
+const unitImagePreview = document.getElementById('unitImagePreview');
+if (carStockSelect && unitImagePreview) {
+    carStockSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const imgSrc = selectedOption.getAttribute('data-img');
+        if (imgSrc) {
+            unitImagePreview.querySelector('img').src = imgSrc;
+            unitImagePreview.style.display = 'block';
+        } else {
+            unitImagePreview.style.display = 'none';
+        }
+    });
+}
 
 function isAllWeekend(startDate, days) {
     if (!startDate || days < 1) return false;
@@ -206,23 +255,23 @@ function calcDiscount() {
 
     // Check weekend discount
     if (startDate && isAllWeekend(startDate, days)) {
-        bestKey = 'weekend'; bestPct = 25;
+        bestKey = 'weekend'; bestPct = discountDefs.weekend.pct;
     }
     // Check long rental
-    if (days >= 7 && discountDefs.long_rental.pct > bestPct) {
-        bestKey = 'long_rental'; bestPct = 20;
+    if (days >= discountDefs.long_rental.minDays && discountDefs.long_rental.pct > bestPct) {
+        bestKey = 'long_rental'; bestPct = discountDefs.long_rental.pct;
     }
     // Check first order
     if (isFirstOrder && discountDefs.first_order.pct > bestPct) {
-        bestKey = 'first_order'; bestPct = 15;
+        bestKey = 'first_order'; bestPct = discountDefs.first_order.pct;
     }
     // Check family package
     if (occasion === 'family' && discountDefs.family.pct > bestPct) {
-        bestKey = 'family'; bestPct = 10;
+        bestKey = 'family'; bestPct = discountDefs.family.pct;
     }
 
     var totalAfterDiscount = originalTotal;
-    if (bestKey) {
+    if (bestKey && bestPct > 0) {
         totalAfterDiscount = Math.round(originalTotal * (1 - bestPct / 100));
         originalPriceDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
         originalPriceRow.style.display = '';

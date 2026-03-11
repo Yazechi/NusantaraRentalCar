@@ -14,7 +14,7 @@ if (!$car_id) {
 // Use prepared statement to prevent SQL injection
 $stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
-        (SELECT GROUP_CONCAT(cs.plate_number SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
+        (SELECT GROUP_CONCAT(CONCAT(cs.plate_number, IF(cs.color IS NOT NULL AND cs.color != '', CONCAT(' - ', cs.color), '')) SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count
         FROM cars c
@@ -50,19 +50,72 @@ $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 $available_stock = (int)$car['available_stock'];
+
+// Get additional images from car_images
+$stmt = $conn->prepare("SELECT image_path FROM car_images WHERE car_id = ?");
+$stmt->bind_param("i", $car_id);
+$stmt->execute();
+$additional_images_res = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Get stock unit details for dropdown and images
+$stmt = $conn->prepare("SELECT plate_number, color, image_url FROM car_stock WHERE car_id = ? AND status = 'available'");
+$stmt->bind_param("i", $car_id);
+$stmt->execute();
+$stock_units = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+$all_images = [];
+if (!empty($car['image_main'])) {
+    $all_images[] = $car['image_main'];
+}
+foreach ($additional_images_res as $img) {
+    if (!in_array($img['image_path'], $all_images)) {
+        $all_images[] = $img['image_path'];
+    }
+}
+foreach ($stock_units as $unit) {
+    if (!empty($unit['image_url']) && !in_array($unit['image_url'], $all_images)) {
+        $all_images[] = $unit['image_url'];
+    }
+}
 ?>
 
 <div class="row">
     <div class="col-md-7">
-        <div class="card border-0 shadow-sm mb-4">
-            <?php if (!empty($car['image_main'])): ?>
-                <img src="<?php echo UPLOAD_URL . sanitize_output($car['image_main']); ?>" class="card-img-top rounded" alt="<?php echo sanitize_output($car['name']); ?>">
+        <!-- Main Car Image (Card-Image) -->
+        <div class="mb-4">
+            <?php if (!empty($all_images)): ?>
+                <div class="card border-0 shadow-sm">
+                    <img id="mainCarImage" src="<?php echo UPLOAD_URL . sanitize_output($all_images[0]); ?>" class="card-img-top rounded" style="object-fit: cover; height: 400px; transition: opacity 0.3s ease-in-out;" alt="<?php echo sanitize_output($car['name']); ?>">
+                </div>
             <?php else: ?>
-                <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
-                    <i class="fas fa-car fa-5x text-white"></i>
+                <div class="card border-0 shadow-sm">
+                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
+                        <i class="fas fa-car fa-5x text-white"></i>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
+
+        <!-- Preview Section (Gallery as Individual Cards) -->
+        <?php if (!empty($all_images)): ?>
+            <div class="mb-5">
+                <h5 class="mb-3 text-muted fw-bold small text-uppercase"><i class="fas fa-images me-2"></i><?php echo __('car_gallery'); ?></h5>
+                <div class="row g-3">
+                    <?php foreach ($all_images as $index => $img): ?>
+                        <div class="col-6 col-sm-4 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 preview-card">
+                                <img src="<?php echo UPLOAD_URL . sanitize_output($img); ?>" 
+                                     class="card-img-top rounded" 
+                                     style="height: 120px; object-fit: cover;" 
+                                     alt="Gallery Image <?php echo $index + 1; ?>">
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Reviews Section -->
         <div class="mt-4">
@@ -149,23 +202,24 @@ $available_stock = (int)$car['available_stock'];
                         <i class="fas fa-gas-pump text-muted mb-1"></i>
                         <div class="small fw-bold">Pertamax</div>
                     </div>
-                    <div class="col border-end px-1">
-                        <i class="fas fa-palette text-muted mb-1"></i>
-                        <div class="small fw-bold text-truncate" title="<?php echo sanitize_output($car['color'] ?? 'N/A'); ?>"><?php echo sanitize_output($car['color'] ?? 'N/A'); ?></div>
-                    </div>
                     <div class="col px-1">
                         <i class="fas fa-id-card text-muted mb-1"></i>
                         <div class="small fw-bold">
                             <?php 
-                            $plates = !empty($car['plates']) ? array_map('trim', explode(',', $car['plates'])) : [];
-                            if (count($plates) > 1): ?>
-                                <select class="form-select form-select-sm border-0 bg-transparent text-center fw-bold p-0 mx-auto" style="width: auto; cursor:pointer; box-shadow: none; display:inline-block; font-size: inherit; background-position: right 0 center; padding-right: 1.2rem !important;">
-                                    <?php foreach ($plates as $p): ?>
-                                        <option><?php echo sanitize_output($p); ?></option>
+                            if (count($stock_units) > 1): ?>
+                                <select id="plateSelect" class="form-select form-select-sm border-0 bg-transparent text-center fw-bold p-0 mx-auto" style="width: auto; cursor:pointer; box-shadow: none; display:inline-block; font-size: inherit; background-position: right 0 center; padding-right: 1.2rem !important;">
+                                    <?php foreach ($stock_units as $unit): 
+                                        $plate_text = $unit['plate_number'] . (!empty($unit['color']) ? ' - ' . $unit['color'] : '');
+                                        $stock_img = !empty($unit['image_url']) ? UPLOAD_URL . sanitize_output($unit['image_url']) : '';
+                                    ?>
+                                        <option value="<?php echo sanitize_output($unit['plate_number']); ?>" data-image="<?php echo $stock_img; ?>"><?php echo sanitize_output($plate_text); ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                            <?php elseif (count($plates) == 1): ?>
-                                <?php echo sanitize_output($plates[0]); ?>
+                            <?php elseif (count($stock_units) == 1): 
+                                $unit = $stock_units[0];
+                                $plate_text = $unit['plate_number'] . (!empty($unit['color']) ? ' - ' . $unit['color'] : '');
+                            ?>
+                                <?php echo sanitize_output($plate_text); ?>
                             <?php else: ?>
                                 N/A
                             <?php endif; ?>
@@ -232,5 +286,39 @@ $available_stock = (int)$car['available_stock'];
         <i class="fas fa-arrow-left me-1"></i> <?php echo __('back_to_all_cars'); ?>
     </a>
 </div>
+
+<script>
+function updateMainImage(src) {
+    const mainCarImage = document.getElementById('mainCarImage');
+    if (mainCarImage && src) {
+        mainCarImage.style.opacity = '0';
+        setTimeout(() => {
+            mainCarImage.src = src;
+            mainCarImage.style.opacity = '1';
+        }, 300);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const plateSelect = document.getElementById('plateSelect');
+    const mainCarImage = document.getElementById('mainCarImage');
+    
+    // Store original main image
+    const originalMainImage = mainCarImage ? mainCarImage.src : '';
+
+    if (plateSelect && mainCarImage) {
+        plateSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const newImage = selectedOption.getAttribute('data-image');
+            
+            if (newImage) {
+                updateMainImage(newImage);
+            } else {
+                updateMainImage(originalMainImage);
+            }
+        });
+    }
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

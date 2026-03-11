@@ -56,8 +56,39 @@ while ($row = $goals_res->fetch_assoc()) {
 }
 $goals_stmt->close();
 
+// Get additional images
+$images_stmt = $conn->prepare("SELECT * FROM car_images WHERE car_id = ?");
+$images_stmt->bind_param("i", $car_id);
+$images_stmt->execute();
+$additional_images = $images_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$images_stmt->close();
+
+// Process delete image
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_image') {
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error_message = 'Security validation failed.';
+    } else {
+        $img_id = filter_var($_POST['image_id'] ?? 0, FILTER_VALIDATE_INT);
+        $stmt = $conn->prepare("SELECT image_path FROM car_images WHERE id = ? AND car_id = ?");
+        $stmt->bind_param("ii", $img_id, $car_id);
+        $stmt->execute();
+        $img = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if ($img) {
+            @unlink($project_root . '/uploads/cars/' . $img['image_path']);
+            $stmt = $conn->prepare("DELETE FROM car_images WHERE id = ?");
+            $stmt->bind_param("i", $img_id);
+            $stmt->execute();
+            $stmt->close();
+            set_flash_message('success', 'Image deleted successfully.');
+            redirect(SITE_URL . '/admin/car-edit.php?id=' . $car_id);
+            exit;
+        }
+    }
+}
+
 // Process form
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (!isset($_POST['action']) || $_POST['action'] !== 'delete_image')) {
     if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
         $error_message = 'Security validation failed.';
     } else {
@@ -71,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fuel_type = trim($_POST['fuel_type'] ?? '');
         $is_electric = isset($_POST['is_electric']) ? 1 : 0;
         if ($is_electric) $fuel_type = 'electric';
-        $color = trim($_POST['color'] ?? '');
         $price_per_day = filter_var($_POST['price_per_day'] ?? 0, FILTER_VALIDATE_FLOAT);
         $is_available = isset($_POST['is_available']) ? 1 : 0;
         $description = trim($_POST['description'] ?? '');
@@ -98,12 +128,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("
                 UPDATE cars SET 
                     brand_id = ?, type_id = ?, name = ?, model = ?, year = ?, 
-                    seats = ?, transmission = ?, fuel_type = ?, is_electric = ?, color = ?,
+                    seats = ?, transmission = ?, fuel_type = ?, is_electric = ?,
                     price_per_day = ?, is_available = ?, description = ?,
                     discount_percent = ?, is_featured = ?
                 WHERE id = ?
             ");
-            $stmt->bind_param("iississsisdssiii", $brand_id, $type_id, $name, $model, $year, $seats, $transmission, $fuel_type, $is_electric, $color, $price_per_day, $is_available, $description, $discount_percent, $is_featured, $car_id);
+            $stmt->bind_param("iissiissidisiii", $brand_id, $type_id, $name, $model, $year, $seats, $transmission, $fuel_type, $is_electric, $price_per_day, $is_available, $description, $discount_percent, $is_featured, $car_id);
 
             if ($stmt->execute()) {
                 $stmt->close();
@@ -125,10 +155,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $upload_result = upload_image($_FILES['image_main']);
                     if ($upload_result['success']) {
                         $filename = $upload_result['filename'];
+                        
+                        // Delete old image if it exists
+                        if (!empty($car['image_main'])) {
+                            $old_file_path = $project_root . '/uploads/' . $car['image_main'];
+                            if (file_exists($old_file_path)) {
+                                @unlink($old_file_path);
+                            }
+                        }
+                        
                         $update_stmt = $conn->prepare("UPDATE cars SET image_main = ? WHERE id = ?");
                         $update_stmt->bind_param("si", $filename, $car_id);
                         $update_stmt->execute();
                         $update_stmt->close();
+                    }
+                }
+
+                // Handle additional images upload
+                if (isset($_FILES['additional_images'])) {
+                    $file_count = count($_FILES['additional_images']['name']);
+                    for ($i = 0; $i < $file_count; $i++) {
+                        if ($_FILES['additional_images']['error'][$i] === UPLOAD_ERR_OK) {
+                            $file = [
+                                'name' => $_FILES['additional_images']['name'][$i],
+                                'type' => $_FILES['additional_images']['type'][$i],
+                                'tmp_name' => $_FILES['additional_images']['tmp_name'][$i],
+                                'error' => $_FILES['additional_images']['error'][$i],
+                                'size' => $_FILES['additional_images']['size'][$i],
+                            ];
+                            $upload_result = upload_image($file);
+                            if ($upload_result['success']) {
+                                $filename = $upload_result['filename'];
+                                $img_stmt = $conn->prepare("INSERT INTO car_images (car_id, image_path) VALUES (?, ?)");
+                                $img_stmt->bind_param("is", $car_id, $filename);
+                                $img_stmt->execute();
+                                $img_stmt->close();
+                            }
+                        }
                     }
                 }
 
@@ -308,6 +371,13 @@ $csrf_token = generate_csrf_token();
                         <?php endif; ?>
                     </div>
 
+                    <!-- Additional Images -->
+                    <div class="col-md-6 mb-3">
+                        <label for="additional_images" class="form-label"><?php echo __('admin_additional_photos'); ?></label>
+                        <input type="file" class="form-control" id="additional_images" name="additional_images[]" accept="image/jpeg,image/png,image/webp" multiple>
+                        <small class="text-muted d-block mt-1"><?php echo __('admin_multiple_photos_hint'); ?></small>
+                    </div>
+
                     <!-- Description -->
                     <div class="col-12 mb-3">
                         <label for="description" class="form-label"><?php echo __('admin_description'); ?></label>
@@ -328,6 +398,32 @@ $csrf_token = generate_csrf_token();
             </form>
         </div>
     </div>
+
+    <!-- Current Additional Photos Management -->
+    <?php if (!empty($additional_images)): ?>
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-images"></i> <?php echo __('admin_manage_additional_photos'); ?></h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <?php foreach ($additional_images as $img): ?>
+                <div class="col-md-3 col-sm-4 col-6 position-relative">
+                    <img src="<?php echo SITE_URL . '/uploads/cars/' . sanitize_output($img['image_path']); ?>" alt="Car Photo" class="img-fluid rounded border" style="height: 150px; width: 100%; object-fit: cover;">
+                    <form method="POST" class="position-absolute top-0 end-0 m-2" onsubmit="return confirm('<?php echo __('admin_confirm_delete_image'); ?>');">
+                        <?php echo csrf_input_field(); ?>
+                        <input type="hidden" name="action" value="delete_image">
+                        <input type="hidden" name="image_id" value="<?php echo $img['id']; ?>">
+                        <button type="submit" class="btn btn-danger btn-sm rounded-circle shadow" title="<?php echo __('admin_delete_image'); ?>">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

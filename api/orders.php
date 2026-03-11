@@ -83,11 +83,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $driver_daily_fee = (float)get_site_setting('driver_daily_fee');
     $tool_kit_fee = (float)get_site_setting('tool_kit_fee');
     
+    $selected_stock_id = filter_var($_POST['car_stock_id'] ?? 0, FILTER_VALIDATE_INT);
+    
     // Check available stock for this car (not rented during the requested dates)
-    // Find an available stock unit that doesn't have overlapping bookings
-    $stmt = $conn->prepare("SELECT cs.id, cs.plate_number FROM car_stock cs 
-        WHERE cs.car_id = ? AND cs.status = 'available'
-        AND cs.id NOT IN (
+    $stock_query = "SELECT cs.id, cs.plate_number FROM car_stock cs 
+        WHERE cs.car_id = ? AND cs.status = 'available' ";
+    
+    if ($selected_stock_id > 0) {
+        $stock_query .= " AND cs.id = ? ";
+    }
+    
+    $stock_query .= " AND cs.id NOT IN (
             SELECT o.car_stock_id FROM orders o 
             WHERE o.car_stock_id IS NOT NULL
             AND o.car_id = ? 
@@ -98,16 +104,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (o.rental_start_date >= ? AND o.rental_end_date <= ?)
             )
         )
-        LIMIT 1");
-    $stmt->bind_param("iissssss", $car_id, $car_id, $rental_start_date, $rental_start_date, 
-        $rental_end_date, $rental_end_date, $rental_start_date, $rental_end_date);
+        LIMIT 1";
+        
+    if ($selected_stock_id > 0) {
+        $stmt = $conn->prepare($stock_query);
+        $stmt->bind_param("iiissssss", $car_id, $selected_stock_id, $car_id, $rental_start_date, $rental_start_date, 
+            $rental_end_date, $rental_end_date, $rental_start_date, $rental_end_date);
+    } else {
+        $stmt = $conn->prepare($stock_query);
+        $stmt->bind_param("iissssss", $car_id, $car_id, $rental_start_date, $rental_start_date, 
+            $rental_end_date, $rental_end_date, $rental_start_date, $rental_end_date);
+    }
+    
     $stmt->execute();
     $stock_result = $stmt->get_result();
     $available_unit = $stock_result->fetch_assoc();
     $stmt->close();
     
     if (!$available_unit) {
-        set_flash_message('danger', 'Sorry, no units of this car are available for the selected dates. Please choose different dates or another car.');
+        if ($selected_stock_id > 0) {
+            set_flash_message('danger', 'Sorry, the selected car unit is not available for the selected dates.');
+        } else {
+            set_flash_message('danger', 'Sorry, no units of this car are available for the selected dates. Please choose different dates or another car.');
+        }
         redirect(SITE_URL . '/order.php?id=' . $car_id);
     }
     
@@ -115,11 +134,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $original_price = $car['price_per_day'] * $duration_days;
     
+    // Fetch discount settings
+    $discount_weekend_pct = (int)get_site_setting('discount_weekend_pct') ?: 25;
+    $discount_first_order_pct = (int)get_site_setting('discount_first_order_pct') ?: 15;
+    $discount_long_rental_pct = (int)get_site_setting('discount_long_rental_pct') ?: 20;
+    $discount_family_pct = (int)get_site_setting('discount_family_pct') ?: 10;
+    $discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') ?: 7;
+
     // Determine best applicable discount (highest percentage wins)
     $discount_type = null;
     $discount_percent = 0;
     
-    // 1. Weekend discount (25%) — all rental days must be Sat-Sun
+    // 1. Weekend discount — all rental days must be Sat-Sun
     $all_weekend = true;
     $check_date = strtotime($rental_start_date);
     for ($i = 0; $i < $duration_days; $i++) {
@@ -127,28 +153,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($dow != 0 && $dow != 6) { $all_weekend = false; break; }
         $check_date = strtotime('+1 day', $check_date);
     }
-    if ($all_weekend && 25 > $discount_percent) {
-        $discount_type = 'weekend'; $discount_percent = 25;
+    if ($all_weekend && $discount_weekend_pct > $discount_percent) {
+        $discount_type = 'weekend'; $discount_percent = $discount_weekend_pct;
     }
     
-    // 2. Long rental discount (20%) — 7+ days
-    if ($duration_days >= 7 && 20 > $discount_percent) {
-        $discount_type = 'long_rental'; $discount_percent = 20;
+    // 2. Long rental discount
+    if ($duration_days >= $discount_long_rental_days && $discount_long_rental_pct > $discount_percent) {
+        $discount_type = 'long_rental'; $discount_percent = $discount_long_rental_pct;
     }
     
-    // 3. First order discount (15%)
+    // 3. First order discount
     $stmt_first = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND status IN ('approved','completed')");
     $stmt_first->bind_param("i", $user_id);
     $stmt_first->execute();
     $first_order_count = $stmt_first->get_result()->fetch_assoc()['cnt'];
     $stmt_first->close();
-    if ($first_order_count == 0 && 15 > $discount_percent) {
-        $discount_type = 'first_order'; $discount_percent = 15;
+    if ($first_order_count == 0 && $discount_first_order_pct > $discount_percent) {
+        $discount_type = 'first_order'; $discount_percent = $discount_first_order_pct;
     }
     
-    // 4. Family package discount (10%)
-    if ($rental_occasion === 'family' && 10 > $discount_percent) {
-        $discount_type = 'family'; $discount_percent = 10;
+    // 4. Family package discount
+    if ($rental_occasion === 'family' && $discount_family_pct > $discount_percent) {
+        $discount_type = 'family'; $discount_percent = $discount_family_pct;
     }
     
     $car_total = $discount_percent > 0
@@ -175,12 +201,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $order_id = $conn->insert_id;
         $stmt->close();
         
-        // Mark stock unit as rented
-        $stmt = $conn->prepare("UPDATE car_stock SET status = 'rented' WHERE id = ?");
-        $stmt->bind_param("i", $car_stock_id);
-        $stmt->execute();
-        $stmt->close();
-        
         // Build WhatsApp message
         $message = "Halo Admin, saya ingin menyewa mobil.\n";
         $message .= "Order ID: #$order_id\n";
@@ -204,12 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($stmt->execute()) {
         $order_id = $conn->insert_id;
-        $stmt->close();
-        
-        // Mark stock unit as rented
-        $stmt = $conn->prepare("UPDATE car_stock SET status = 'rented' WHERE id = ?");
-        $stmt->bind_param("i", $car_stock_id);
-        $stmt->execute();
         $stmt->close();
         
         // Send email notifications

@@ -19,6 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $car_id = filter_var($_POST['car_id'] ?? 0, FILTER_VALIDATE_INT);
 
         if ($car_id > 0) {
+            // Get car details to delete images from filesystem
+            $stmt_car = $conn->prepare("SELECT image_main FROM cars WHERE id = ?");
+            $stmt_car->bind_param("i", $car_id);
+            $stmt_car->execute();
+            $car_to_delete = $stmt_car->get_result()->fetch_assoc();
+            $stmt_car->close();
+            
+            if ($car_to_delete && !empty($car_to_delete['image_main'])) {
+                $old_file_path = $project_root . '/uploads/' . $car_to_delete['image_main'];
+                if (file_exists($old_file_path)) {
+                    @unlink($old_file_path);
+                }
+            }
+
             // Delete car images first
             $stmt_img = $conn->prepare("DELETE FROM car_images WHERE car_id = ?");
             $stmt_img->bind_param("i", $car_id);

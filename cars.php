@@ -68,9 +68,12 @@ $sel_goal = filter_input(INPUT_GET, 'goal', FILTER_VALIDATE_INT) ?: '';
                     <select name="seats" class="form-select">
                         <option value=""><?php echo __('filter_any'); ?></option>
                         <option value="2">2</option>
+                        <option value="3">3</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
+                        <option value="6">6</option>
                         <option value="7">7</option>
+                        <option value="8+">8+</option>
                     </select>
                 </div>
 

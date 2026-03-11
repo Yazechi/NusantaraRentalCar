@@ -14,13 +14,12 @@ if (!$order_id) {
 
 // Get order with car details
 $query = "SELECT o.*, c.name AS car_name, cb.name AS brand_name, c.image_main,
-        c.transmission, c.seats, c.fuel_type, c.color, ct.name AS type_name, 
-        u.name AS user_name, u.email AS user_email, cs.plate_number
-        FROM orders o 
-        JOIN cars c ON o.car_id = c.id 
+        c.transmission, c.seats, c.fuel_type, ct.name AS type_name,
+        u.name AS user_name, u.email AS user_email, cs.plate_number, cs.color AS color
+        FROM orders o
+        JOIN cars c ON o.car_id = c.id
         JOIN car_brands cb ON c.brand_id = cb.id
-        LEFT JOIN car_types ct ON c.type_id = ct.id
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN car_types ct ON c.type_id = ct.id        JOIN users u ON o.user_id = u.id
         LEFT JOIN car_stock cs ON o.car_stock_id = cs.id
         WHERE o.id = ?";
 
