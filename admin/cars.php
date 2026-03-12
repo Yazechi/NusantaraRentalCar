@@ -76,7 +76,7 @@ $cars_query = "
         c.image_main,
         b.name as brand_name,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id) AS total_stock,
-        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available' AND cs.id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())) AS available_stock,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'rented') AS rented_stock
     FROM cars c
     JOIN car_brands b ON c.brand_id = b.id

@@ -301,7 +301,11 @@ if (!$order) {
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span><?php echo __('discount_amount'); ?>:</span>
-                        <span class="badge bg-success"><?php echo __('discount_' . $order['discount_type']); ?> -<?php echo (int)$order['discount_percent']; ?>%</span>
+                        <?php 
+                            $old_keys = ['weekend', 'first_order', 'long_rental', 'family'];
+                            $display_type = in_array($order['discount_type'], $old_keys) ? __('discount_' . $order['discount_type']) : sanitize_output($order['discount_type']);
+                        ?>
+                        <span class="badge bg-success"><?php echo $display_type; ?> -<?php echo (int)$order['discount_percent']; ?>%</span>
                     </div>
                     <?php endif; ?>
                     <hr>

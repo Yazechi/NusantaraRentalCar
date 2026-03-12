@@ -28,7 +28,7 @@ if (!$car) {
 }
 
 // Get available stocks for this car
-$stmt_stock = $conn->prepare("SELECT id, plate_number, color, image_url FROM car_stock WHERE car_id = ? AND status = 'available'");
+$stmt_stock = $conn->prepare("SELECT id, plate_number, color, image_url FROM car_stock WHERE car_id = ? AND status = 'available' AND id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())");
 $stmt_stock->bind_param("i", $car_id);
 $stmt_stock->execute();
 $available_stocks = $stmt_stock->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -41,12 +41,24 @@ $stmt_first->execute();
 $is_first_order = $stmt_first->get_result()->fetch_assoc()['cnt'] == 0;
 $stmt_first->close();
 
-// Fetch discount settings
-$discount_weekend_pct = (int)get_site_setting('discount_weekend_pct') ?: 25;
-$discount_first_order_pct = (int)get_site_setting('discount_first_order_pct') ?: 15;
-$discount_long_rental_pct = (int)get_site_setting('discount_long_rental_pct') ?: 20;
-$discount_family_pct = (int)get_site_setting('discount_family_pct') ?: 10;
-$discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') ?: 7;
+// Fetch active promotions
+$stmt_promos = $conn->prepare("SELECT title, description, discount_percent, min_duration_days, requires_first_order, is_weekend_only, required_occasion FROM promotions WHERE is_active = 1 AND (valid_to IS NULL OR valid_to >= CURDATE())");
+$stmt_promos->execute();
+$active_promos = $stmt_promos->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_promos->close();
+
+$dynamic_promos_js = [];
+foreach ($active_promos as $promo) {
+    $dynamic_promos_js[] = [
+        'label' => sanitize_output($promo['title']),
+        'desc' => sanitize_output($promo['description']),
+        'pct' => (int)$promo['discount_percent'],
+        'minDays' => (int)$promo['min_duration_days'],
+        'requiresFirst' => (bool)$promo['requires_first_order'],
+        'weekendOnly' => (bool)$promo['is_weekend_only'],
+        'requiredOccasion' => $promo['required_occasion']
+    ];
+}
 ?>
 
 <div class="row justify-content-center">
@@ -204,13 +216,7 @@ const discountPreview = document.getElementById('discountPreview');
 const discountLabel = document.getElementById('discountLabel');
 const discountDesc = document.getElementById('discountDesc');
 const isFirstOrder = <?php echo $is_first_order ? 'true' : 'false'; ?>;
-
-const discountDefs = {
-    weekend:    { pct: <?php echo $discount_weekend_pct; ?>, label: '<?php echo __("discount_weekend"); ?>', desc: '<?php echo __("discount_weekend_desc"); ?>' },
-    first_order:{ pct: <?php echo $discount_first_order_pct; ?>, label: '<?php echo __("discount_first_order"); ?>', desc: '<?php echo __("discount_first_order_desc"); ?>' },
-    long_rental:{ pct: <?php echo $discount_long_rental_pct; ?>, label: '<?php echo __("discount_long_rental"); ?>', desc: '<?php echo __("discount_long_rental_desc"); ?>', minDays: <?php echo $discount_long_rental_days; ?> },
-    family:     { pct: <?php echo $discount_family_pct; ?>, label: '<?php echo __("discount_family"); ?>', desc: '<?php echo __("discount_family_desc"); ?>' }
-};
+const activePromos = <?php echo json_encode($dynamic_promos_js); ?>;
 
 // Handle unit image preview
 const carStockSelect = document.getElementById('car_stock_id');
@@ -256,32 +262,31 @@ function calcDiscount() {
     }
     
     var originalTotal = days * pricePerDay;
-    var bestKey = null, bestPct = 0;
+    var bestPromo = null;
+    var bestPct = 0;
 
-    // Check weekend discount
-    if (startDate && isAllWeekend(startDate, days)) {
-        bestKey = 'weekend'; bestPct = discountDefs.weekend.pct;
-    }
-    // Check long rental
-    if (days >= discountDefs.long_rental.minDays && discountDefs.long_rental.pct > bestPct) {
-        bestKey = 'long_rental'; bestPct = discountDefs.long_rental.pct;
-    }
-    // Check first order
-    if (isFirstOrder && discountDefs.first_order.pct > bestPct) {
-        bestKey = 'first_order'; bestPct = discountDefs.first_order.pct;
-    }
-    // Check family package
-    if (occasion === 'family' && discountDefs.family.pct > bestPct) {
-        bestKey = 'family'; bestPct = discountDefs.family.pct;
-    }
+    // Evaluate dynamic promotions
+    activePromos.forEach(function(promo) {
+        let isEligible = true;
+
+        if (days < promo.minDays) isEligible = false;
+        if (promo.requiresFirst && !isFirstOrder) isEligible = false;
+        if (promo.weekendOnly && !isAllWeekend(startDate, days)) isEligible = false;
+        if (promo.requiredOccasion && promo.requiredOccasion !== '' && promo.requiredOccasion !== occasion) isEligible = false;
+
+        if (isEligible && promo.pct > bestPct) {
+            bestPct = promo.pct;
+            bestPromo = promo;
+        }
+    });
 
     var totalAfterDiscount = originalTotal;
-    if (bestKey && bestPct > 0) {
+    if (bestPromo && bestPct > 0) {
         totalAfterDiscount = Math.round(originalTotal * (1 - bestPct / 100));
         originalPriceDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(originalTotal);
         originalPriceRow.style.display = '';
-        discountLabel.innerText = discountDefs[bestKey].label + ' (-' + bestPct + '%)';
-        discountDesc.innerText = ' — ' + discountDefs[bestKey].desc;
+        discountLabel.innerText = bestPromo.label + ' (-' + bestPct + '%)';
+        discountDesc.innerText = ' — ' + bestPromo.desc;
         discountPreview.style.display = '';
     } else {
         originalPriceRow.style.display = 'none';

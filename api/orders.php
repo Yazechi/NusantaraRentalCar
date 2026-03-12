@@ -134,18 +134,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $original_price = $car['price_per_day'] * $duration_days;
     
-    // Fetch discount settings
-    $discount_weekend_pct = (int)get_site_setting('discount_weekend_pct') ?: 25;
-    $discount_first_order_pct = (int)get_site_setting('discount_first_order_pct') ?: 15;
-    $discount_long_rental_pct = (int)get_site_setting('discount_long_rental_pct') ?: 20;
-    $discount_family_pct = (int)get_site_setting('discount_family_pct') ?: 10;
-    $discount_long_rental_days = (int)get_site_setting('discount_long_rental_days') ?: 7;
+    // Check if first order
+    $stmt_first = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND status IN ('approved','completed')");
+    $stmt_first->bind_param("i", $user_id);
+    $stmt_first->execute();
+    $is_first_order = $stmt_first->get_result()->fetch_assoc()['cnt'] == 0;
+    $stmt_first->close();
 
-    // Determine best applicable discount (highest percentage wins)
-    $discount_type = null;
-    $discount_percent = 0;
-    
-    // 1. Weekend discount — all rental days must be Sat-Sun
+    // Check if weekend
     $all_weekend = true;
     $check_date = strtotime($rental_start_date);
     for ($i = 0; $i < $duration_days; $i++) {
@@ -153,28 +149,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($dow != 0 && $dow != 6) { $all_weekend = false; break; }
         $check_date = strtotime('+1 day', $check_date);
     }
-    if ($all_weekend && $discount_weekend_pct > $discount_percent) {
-        $discount_type = 'weekend'; $discount_percent = $discount_weekend_pct;
-    }
-    
-    // 2. Long rental discount
-    if ($duration_days >= $discount_long_rental_days && $discount_long_rental_pct > $discount_percent) {
-        $discount_type = 'long_rental'; $discount_percent = $discount_long_rental_pct;
-    }
-    
-    // 3. First order discount
-    $stmt_first = $conn->prepare("SELECT COUNT(*) as cnt FROM orders WHERE user_id = ? AND status IN ('approved','completed')");
-    $stmt_first->bind_param("i", $user_id);
-    $stmt_first->execute();
-    $first_order_count = $stmt_first->get_result()->fetch_assoc()['cnt'];
-    $stmt_first->close();
-    if ($first_order_count == 0 && $discount_first_order_pct > $discount_percent) {
-        $discount_type = 'first_order'; $discount_percent = $discount_first_order_pct;
-    }
-    
-    // 4. Family package discount
-    if ($rental_occasion === 'family' && $discount_family_pct > $discount_percent) {
-        $discount_type = 'family'; $discount_percent = $discount_family_pct;
+
+    // Fetch dynamic promotions
+    $stmt_promos = $conn->prepare("SELECT title, discount_percent, min_duration_days, requires_first_order, is_weekend_only, required_occasion FROM promotions WHERE is_active = 1 AND (valid_to IS NULL OR valid_to >= CURDATE())");
+    $stmt_promos->execute();
+    $active_promos = $stmt_promos->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt_promos->close();
+
+    $discount_type = null;
+    $discount_percent = 0;
+
+    foreach ($active_promos as $promo) {
+        $is_eligible = true;
+        if ($duration_days < $promo['min_duration_days']) $is_eligible = false;
+        if ($promo['requires_first_order'] && !$is_first_order) $is_eligible = false;
+        if ($promo['is_weekend_only'] && !$all_weekend) $is_eligible = false;
+        if (!empty($promo['required_occasion']) && $promo['required_occasion'] !== $rental_occasion) $is_eligible = false;
+
+        if ($is_eligible && $promo['discount_percent'] > $discount_percent) {
+            $discount_percent = (int)$promo['discount_percent'];
+            // Store the actual title instead of a slug so it displays nicely
+            $discount_type = $promo['title'];
+        }
     }
     
     $car_total = $discount_percent > 0

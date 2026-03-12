@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/header.php';
 
 // Helper for stars
 function get_stars_html($avg, $count) {
-    if ($count == 0) return '<div class="text-muted small mb-2"><i class="far fa-star me-1"></i>New Car</div>';
+    if ($count == 0) return '<div class="text-muted small mb-2"><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i><i class="far fa-star text-warning"></i> <span class="text-muted">(0)</span></div>';
     $html = '<div class="text-warning small mb-2">';
     for ($i = 1; $i <= 5; $i++) {
         $html .= '<i class="' . ($i <= round($avg) ? 'fas' : 'far') . ' fa-star"></i>';
@@ -19,7 +19,7 @@ function get_stars_html($avg, $count) {
 $featured_cars = [];
 $stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         c.discount_percent, c.is_featured,
-        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available' AND cs.id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())) AS available_stock,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count
         FROM cars c
@@ -35,7 +35,7 @@ $stmt->close();
 $deal_cars = [];
 $stmt = $conn->prepare("SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         c.discount_percent,
-        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available' AND cs.id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())) AS available_stock,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count
         FROM cars c
@@ -146,22 +146,22 @@ $total_orders = $conn->query("SELECT COUNT(*) as c FROM orders WHERE status IN (
 
 <!-- Special Offers -->
 <?php if (!empty($promotions)): ?>
-<?php
-$promo_images = [
-    'Weekend Special' => ['en' => 'weekend bonus(en).png', 'id' => 'weekend bonus(id).png'],
-    'First Ride Bonus' => ['en' => 'First Ride Bonus(en).png', 'id' => 'First Ride Bonus(id).png'],
-    'Long Trip Deal' => ['en' => 'LONG TRIP DEAL (en).png', 'id' => 'LONG TRIP DEAL (id).png'],
-    'Family Package' => ['en' => 'Family package(en).png', 'id' => 'Family package (id).png'],
-];
-$current_lang = get_current_lang();
-?>
+<?php $current_lang = get_current_lang(); ?>
 <div class="section-full promo-section-bg">
     <div class="container">
         <h2 class="section-title"><i class="fas fa-gift me-2"></i><?php echo __('promo_section_title'); ?></h2>
         <p class="section-subtitle"><?php echo __('promo_section_subtitle'); ?></p>
         <div class="row g-3">
             <?php foreach ($promotions as $promo):
-                $img_file = $promo_images[$promo['title']][$current_lang] ?? $promo_images[$promo['title']]['en'] ?? '';
+                // Select image based on current language, fallback to the other language if missing, then default
+                $img_file = 'default-promo.png';
+                if ($current_lang === 'id' && !empty($promo['image_id'])) {
+                    $img_file = $promo['image_id'];
+                } elseif (!empty($promo['image_en'])) {
+                    $img_file = $promo['image_en'];
+                } elseif (!empty($promo['image_id'])) {
+                    $img_file = $promo['image_id'];
+                }
             ?>
             <div class="col-md-6 col-lg-3">
                 <div class="promo-card-img">

@@ -88,13 +88,14 @@ document.querySelectorAll('input[type="number"]').forEach(input => {
 });
 
 // ============ Image Preview for File Uploads ============
-document.querySelectorAll('input[type="file"][accept*="image"]').forEach(input => {
+// Added :not(#chat-image-input) to prevent conflicts with the AI Chat widget
+document.querySelectorAll('input[type="file"][accept*="image"]:not(#chat-image-input)').forEach(input => {
     input.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(event) {
-                const preview = document.getElementById('imagePreview') || createPreviewElement();
+                const preview = document.getElementById('imagePreview') || createPreviewElement(e.target);
                 preview.src = event.target.result;
                 preview.style.display = 'block';
             };
@@ -103,6 +104,21 @@ document.querySelectorAll('input[type="file"][accept*="image"]').forEach(input =
     });
 });
 
+// Slightly updated to ensure the preview attaches to the correct input's parent
+function createPreviewElement(targetInput) {
+    const preview = document.createElement('img');
+    preview.id = 'imagePreview';
+    preview.style.maxWidth = '200px';
+    preview.style.marginTop = '10px';
+    preview.style.borderRadius = '8px';
+    preview.style.display = 'none';
+    
+    // Attach to the specific input that triggered the event, not just the first one it finds
+    if (targetInput && targetInput.parentNode) {
+        targetInput.parentNode.appendChild(preview);
+    }
+    return preview;
+}
 function createPreviewElement() {
     const preview = document.createElement('img');
     preview.id = 'imagePreview';

@@ -68,9 +68,12 @@ $midtrans_is_production = false;
                                 </small>
                             </div>
                             <div class="col-md-4 text-end">
-                                <?php if ($order['discount_percent'] > 0): ?>
+                                <?php if ($order['discount_percent'] > 0): 
+                                    $old_keys = ['weekend', 'first_order', 'long_rental', 'family'];
+                                    $display_type = in_array($order['discount_type'], $old_keys) ? __('discount_' . $order['discount_type']) : sanitize_output($order['discount_type']);
+                                ?>
                                     <small class="text-muted"><s><?php echo format_currency($order['original_price']); ?></s></small><br>
-                                    <span class="badge bg-success mb-1">-<?php echo (int)$order['discount_percent']; ?>% <?php echo __('discount_' . $order['discount_type']); ?></span><br>
+                                    <span class="badge bg-success mb-1">-<?php echo (int)$order['discount_percent']; ?>% <?php echo $display_type; ?></span><br>
                                 <?php endif; ?>
                                 <h4 class="text-primary mb-0"><?php echo format_currency($order['total_price']); ?></h4>
                             </div>

@@ -70,6 +70,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </a>
             </div>
 
+            <!-- Promotions -->
+            <a class="nav-link <?php echo $current_page === 'promotions.php' || strpos($current_page, 'promotion-') !== false ? 'active' : ''; ?>"
+                href="<?php echo SITE_URL; ?>/admin/promotions.php">
+                <i class="fas fa-gift"></i> <?php echo __('admin_manage_promotions'); ?>
+            </a>
+
             <!-- Settings -->
             <a class="nav-link <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>"
                 href="<?php echo SITE_URL; ?>/admin/settings.php">

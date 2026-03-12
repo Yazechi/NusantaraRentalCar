@@ -21,7 +21,7 @@ $result = $conn->query("SELECT COUNT(*) as count FROM car_stock");
 $stats['total_stock'] = $result->fetch_assoc()['count'];
 
 // Available stock units
-$result = $conn->query("SELECT COUNT(*) as count FROM car_stock WHERE status = 'available'");
+$result = $conn->query("SELECT COUNT(*) as count FROM car_stock WHERE status = 'available' AND id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())");
 $stats['available_stock'] = $result->fetch_assoc()['count'];
 
 // Rented stock units

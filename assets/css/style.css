@@ -183,12 +183,6 @@ footer { margin-top: auto; }
 }
 
 /* ============ Nav Tabs — Profile, Account & all Light Pages ============ */
-/*
- * These rules use !important throughout to beat Bootstrap's specificity.
- * They apply to ALL .nav-tabs on light-background pages.
- * The navbar rules above are scoped to .custom-navbar/.navbar-dark so
- * they do NOT interfere here.
- */
 .nav-tabs {
     border-bottom: 1px solid var(--border-color) !important;
 }
@@ -1460,16 +1454,116 @@ footer { margin-top: auto; }
 #chat-content {
     flex: 1; padding: 20px;
     overflow-y: auto; background: var(--gray-lighter);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 #chat-input-area {
     padding: 14px;
     background: white;
     border-top: 1px solid var(--border-color);
-    display: flex; gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-#chat-input-area input {
+.chat-message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    word-break: break-word;
+}
+
+.chat-message.bot {
+    background: var(--white);
+    color: var(--dark);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+}
+
+.chat-message.user {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--dark);
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+}
+
+.chat-message ul { margin: 10px 0 0 20px; padding: 0; }
+.chat-message li { margin-bottom: 5px; }
+
+.chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+
+#chat-image-preview {
+    display: none;
+    position: relative;
+    align-self: flex-start;
+    margin-bottom: 4px;
+}
+
+#chat-preview-img {
+    max-height: 70px;
+    border-radius: 8px;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.chat-preview-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.chat-preview-close:hover {
+    transform: scale(1.1);
+}
+
+.chat-image-btn {
+    cursor: pointer;
+    width: 42px;
+    height: 42px;
+    background: var(--gray-lighter);
+    border: 1.5px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--gray-dark);
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.chat-image-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+#chat-input-area input[type="text"] {
     flex: 1; padding: 10px 16px;
     border-radius: var(--radius-pill);
     border: 1.5px solid var(--border-color);
@@ -1478,12 +1572,12 @@ footer { margin-top: auto; }
     outline: none;
     transition: var(--transition-fast);
 }
-#chat-input-area input:focus {
+#chat-input-area input[type="text"]:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
 }
 
-#chat-input-area button {
+#chat-input-area button.send-btn {
     width: 42px; height: 42px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
@@ -1493,8 +1587,9 @@ footer { margin-top: auto; }
     transition: var(--transition-fast);
     display: flex; align-items: center; justify-content: center;
     font-size: 1rem;
+    flex-shrink: 0;
 }
-#chat-input-area button:hover { transform: scale(1.1); }
+#chat-input-area button.send-btn:hover { transform: scale(1.1); }
 
 /* ============ Utilities ============ */
 .text-gold { color: var(--primary-color) !important; }
@@ -1503,7 +1598,6 @@ footer { margin-top: auto; }
 .divider-gold { border: none; height: 2px; background: linear-gradient(90deg, transparent, var(--primary-color), transparent); margin: 40px 0; }
 
 /* ============ User Profile Page ============ */
-/* Ensure all text on profile/account pages is visible on light backgrounds */
 .profile-page,
 .account-page,
 [class*="profile"],
@@ -1513,7 +1607,6 @@ footer { margin-top: auto; }
     color: var(--gray-dark) !important;
 }
 
-/* Profile card / info panels */
 .profile-card,
 .profile-info,
 .user-profile,
@@ -1526,7 +1619,6 @@ footer { margin-top: auto; }
     color: var(--gray-dark);
 }
 
-/* Force all text in profile areas to be dark/visible */
 .profile-card *,
 .profile-info *,
 .user-profile *,
@@ -1550,7 +1642,6 @@ footer { margin-top: auto; }
     color: var(--gray-dark) !important;
 }
 
-/* General page rule: any card/white surface must have dark text */
 .card,
 .card-body,
 .card-header {
@@ -1567,7 +1658,6 @@ footer { margin-top: auto; }
     color: var(--gray-dark);
 }
 
-/* Table text visibility on light pages */
 .table-light th,
 .table-light td,
 .table th,
@@ -1575,35 +1665,25 @@ footer { margin-top: auto; }
     color: var(--gray-dark) !important;
 }
 
-/* Form text visibility */
 .form-control,
 .form-select {
     color: var(--gray-dark) !important;
 }
 
-/* Any inline text that might have been set to white */
-p, span, li, td, th, label, h1, h2, h3, h4, h5, h6, div {
-    /* Do not override — only target white text on white bg specifically below */
-}
-
-/* Catch-all: white text is only valid inside dark containers */
 .section-dark *,
 .promo-section-bg *,
 .custom-navbar *,
 .site-footer *,
 #chat-header,
 #chat-header * {
-    /* white text is correct in these dark contexts — leave alone */
 }
 
-/* Outside of dark containers: text must be dark */
 main p, main span:not([class*="badge"]):not([class*="price"]),
 main li, main label, main h1, main h2, main h3,
 main h4, main h5, main h6 {
     color: var(--gray-dark);
 }
 
-/* Profile avatar initials */
 .profile-avatar,
 .user-avatar {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
@@ -1615,7 +1695,6 @@ main h4, main h5, main h6 {
     justify-content: center;
 }
 
-/* Profile stat/detail items */
 .profile-stat-value,
 .profile-detail-value {
     color: var(--dark) !important;
@@ -1656,7 +1735,6 @@ main h4, main h5, main h6 {
 }
 
 /* ============ Universal Background Image (Cars_Background.png) ============ */
-/* Pages with full fixed background */
 body.page-cars,
 body.page-car-detail,
 body.page-order,
@@ -1691,15 +1769,14 @@ body.page-payment::before {
     pointer-events: none;
 }
 
-/* For homepage lower sections specifically */
 .home-lower-background {
     position: relative;
-    clip-path: inset(0); /* Necessary for the fixed pseudo-child to be clipped to this container */
+    clip-path: inset(0); 
 }
 
 .home-lower-background::before {
     content: '';
-    position: fixed; /* Fixed background that doesn't scroll */
+    position: fixed; 
     top: 0;
     left: 0;
     width: 100%;
@@ -1723,10 +1800,9 @@ body.page-review main,
 body.page-payment main,
 .home-lower-background > * {
     position: relative;
-    z-index: 1; /* Content above background */
+    z-index: 1; 
 }
 
-/* Ensure cards and surfaces have solid background to stand out */
 .page-cars .deal-card,
 .page-car-detail .card,
 .page-my-orders .card,
@@ -1736,7 +1812,275 @@ body.page-payment main,
 .home-lower-background .deal-card,
 .home-lower-background .type-card-new,
 .home-lower-background .occasion-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 32px rgba(13, 13, 20, 0.06);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.page-cars .deal-card:hover,
+.page-car-detail .card:hover,
+.page-my-orders .card:hover,
+.page-receipt .card:hover,
+.page-review .card:hover,
+.page-payment .card:hover,
+.home-lower-background .deal-card:hover,
+.home-lower-background .type-card-new:hover,
+.home-lower-background .occasion-card:hover {
+    background: #ffffff;
+    border-color: rgba(201, 168, 76, 0.3);
+    box-shadow: 0 16px 48px rgba(13, 13, 20, 0.12);
+    transform: translateY(-4px);
+}
+
+/* Premium Light Glass alternative for specific components */
+.luxury-dark-glass {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    color: var(--gray-dark);
+    transition: var(--transition);
+}
+
+.luxury-dark-glass:hover {
+    border-color: rgba(201, 168, 76, 0.3);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+    transform: translateY(-3px);
+}
+
+.luxury-dark-glass .text-muted {
+    color: var(--gray) !important;
+}
+
+.luxury-dark-glass .text-dark {
+    color: var(--dark) !important;
+}
+
+.luxury-dark-glass .text-gold {
+    color: var(--primary-color) !important;
+}
+
+.luxury-dark-glass .bg-dark-car {
+    background: var(--gray-lighter) !important;
+}
+
+.luxury-dark-glass .bg-dark-car.bg-opacity-50 {
+    background: rgba(241, 245, 249, 0.5) !important;
+}
+
+.luxury-dark-glass .bg-dark-car.bg-opacity-75 {
+    background: rgba(241, 245, 249, 0.8) !important;
+}
+
+.luxury-dark-glass .border-secondary {
+    border-color: var(--border-color) !important;
+}
+
+.luxury-dark-glass .border-gold {
+    border-color: rgba(201, 168, 76, 0.3) !important;
+}
+
+/* ============ Car Detail Page Refinements ============ */
+.page-car-detail .car-visuals-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.page-car-detail .preview-card {
     background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    position: relative;
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-car-detail .preview-card img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.4s ease;
+    padding: 30px;
+}
+
+.page-car-detail .gallery-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
+    padding: 24px;
+}
+
+.page-car-detail .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 16px;
+}
+
+.page-car-detail .gallery-thumb {
+    height: 85px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--transition-fast);
+    background: var(--gray-lighter);
+}
+
+.page-car-detail .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+    transition: var(--transition-fast);
+}
+
+.page-car-detail .gallery-thumb:hover {
+    transform: translateY(-4px) scale(1.05);
+    border-color: var(--primary-color);
+}
+
+.page-car-detail .gallery-thumb:hover img,
+.page-car-detail .gallery-thumb.active img {
+    opacity: 1;
+}
+
+.page-car-detail .gallery-thumb.active {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.page-car-detail .specs-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 30px;
+}
+
+.page-car-detail .specs-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.page-car-detail .spec-pill {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: var(--radius-md);
+    background: var(--gray-lighter);
+    border: 1px solid transparent;
+    transition: var(--transition-fast);
+}
+
+.page-car-detail .spec-pill:hover {
+    background: var(--white);
+    border-color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+.page-car-detail .spec-pill i {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: var(--dark);
+    border-radius: 10px;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-gold);
+}
+
+.page-car-detail .booking-card-v2 {
+    position: sticky;
+    top: 100px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.page-car-detail .booking-price-header {
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 30px;
+    text-align: center;
+}
+
+.page-car-detail .booking-price-header .price-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.page-car-detail .booking-options {
+    background: var(--white);
+    padding: 30px;
+}
+
+.page-car-detail .info-section {
+    margin-bottom: 40px;
+}
+
+.page-car-detail .info-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.page-car-detail .info-header h5 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.page-car-detail .info-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.page-car-detail .addon-item {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.page-car-detail .addon-item:last-child { border-bottom: none; }
+
+.page-car-detail .review-item {
+    background: var(--white);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: var(--transition-fast);
+}
+
+.page-car-detail .review-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.page-car-detail .rating-badge-premium {
+    background: linear-gradient(135deg, var(--secondary-color), var(--dark));
+    color: var(--primary-color);
+    padding: 15px 20px;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-color);
 }

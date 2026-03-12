@@ -6,8 +6,8 @@ header('Content-Type: application/json');
 // Get all cars with their stock availability and ratings
 $sql = "SELECT c.*, cb.name AS brand_name, ct.name AS type_name,
         c.discount_percent,
-        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS available_stock,
-        (SELECT GROUP_CONCAT(CONCAT(cs.plate_number, IF(cs.color IS NOT NULL AND cs.color != '', CONCAT(' - ', cs.color), '')) SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available') AS plates,
+        (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available' AND cs.id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())) AS available_stock,
+        (SELECT GROUP_CONCAT(CONCAT(cs.plate_number, IF(cs.color IS NOT NULL AND cs.color != '', CONCAT(' - ', cs.color), '')) SEPARATOR ', ') FROM car_stock cs WHERE cs.car_id = c.id AND cs.status = 'available' AND cs.id NOT IN (SELECT car_stock_id FROM orders WHERE status IN ('pending', 'approved') AND rental_end_date >= CURDATE())) AS plates,
         (SELECT COUNT(*) FROM car_stock cs WHERE cs.car_id = c.id) AS total_stock,
         (SELECT AVG(rating) FROM car_reviews cr WHERE cr.car_id = c.id) as avg_rating,
         (SELECT COUNT(*) FROM car_reviews cr WHERE cr.car_id = c.id) as review_count

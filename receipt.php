@@ -15,7 +15,7 @@ if (!$order_id) {
 // Get order with car details
 $query = "SELECT o.*, c.name AS car_name, cb.name AS brand_name, c.image_main,
         c.transmission, c.seats, c.fuel_type, ct.name AS type_name,
-        u.name AS user_name, u.email AS user_email, cs.plate_number, cs.color AS color
+        u.name AS user_name, u.email AS user_email, cs.plate_number, cs.color AS color, cs.image_url
         FROM orders o
         JOIN cars c ON o.car_id = c.id
         JOIN car_brands cb ON c.brand_id = cb.id
@@ -111,11 +111,14 @@ $payment_badge = $payment_badges[$order['payment_status']] ?? $payment_badges['u
                 <div class="card mb-4 border">
                     <div class="card-body">
                         <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <?php if (!empty($order['image_main'])): ?>
-                                    <img src="<?php echo UPLOAD_URL . sanitize_output($order['image_main']); ?>" class="img-fluid rounded" alt="Car">
+                            <div class="col-md-3 text-center">
+                                <?php 
+                                    $receipt_img = !empty($order['image_url']) ? $order['image_url'] : $order['image_main'];
+                                    if (!empty($receipt_img)): 
+                                ?>
+                                    <img src="<?php echo UPLOAD_URL . sanitize_output($receipt_img); ?>" class="img-fluid rounded" alt="Car" style="max-height: 120px; object-fit: cover;">
                                 <?php else: ?>
-                                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 100px;">
+                                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded w-100" style="height: 100px;">
                                         <i class="fas fa-car fa-2x text-white"></i>
                                     </div>
                                 <?php endif; ?>
@@ -188,7 +191,11 @@ $payment_badge = $payment_badges[$order['payment_status']] ?? $payment_badges['u
                         </tr>
                         <tr class="table-success">
                             <td class="fw-bold"><?php echo __('discount_amount'); ?></td>
-                            <td><span class="badge bg-success"><?php echo __('discount_' . $order['discount_type']); ?> -<?php echo (int)$order['discount_percent']; ?>%</span></td>
+                            <?php 
+                                $old_keys = ['weekend', 'first_order', 'long_rental', 'family'];
+                                $display_type = in_array($order['discount_type'], $old_keys) ? __('discount_' . $order['discount_type']) : sanitize_output($order['discount_type']);
+                            ?>
+                            <td><span class="badge bg-success"><?php echo $display_type; ?> -<?php echo (int)$order['discount_percent']; ?>%</span></td>
                         </tr>
                         <?php endif; ?>
                         <tr class="table-primary">
@@ -224,9 +231,15 @@ $payment_badge = $payment_badges[$order['payment_status']] ?? $payment_badges['u
 
 <style>
 @media print {
-    .navbar, footer, #chat-widget, .btn, .alert { display: none !important; }
-    .card { border: 1px solid #ddd !important; box-shadow: none !important; }
-    main.container { padding: 0 !important; }
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .navbar, footer, #chat-widget, .btn, .alert, .page-header::after { display: none !important; }
+    body::before { display: none !important; }
+    .card { border: 1px solid #ddd !important; box-shadow: none !important; background: transparent !important; }
+    main.container { padding: 0 !important; max-width: 100% !important; }
+    img.img-fluid { max-width: 250px !important; height: auto !important; display: block !important; }
 }
 </style>
 

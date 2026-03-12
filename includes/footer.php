@@ -36,8 +36,8 @@
                 <div class="col-lg-4 col-md-6">
                     <h6 class="footer-heading"><?php echo __('contact_us'); ?></h6>
                     <ul class="footer-contact">
-                        <li><i class="fas fa-map-marker-alt"></i> <?php echo sanitize_output(get_site_setting('site_address') ?? 'Medan, Indonesia'); ?></li>
-                        <li><i class="fab fa-whatsapp"></i> +<?php echo sanitize_output(get_site_setting('whatsapp_number') ?? '6281234567890'); ?></li>
+                        <li><i class="fas fa-map-marker-alt"></i> <?php echo sanitize_output(get_site_setting('site_address') ?: 'Medan, Indonesia'); ?></li>
+                        <li><i class="fab fa-whatsapp"></i> +<?php echo sanitize_output(get_site_setting('whatsapp_number') ?: '6281234567890'); ?></li>
                     </ul>
                 </div>
             </div>
@@ -95,14 +95,24 @@
                 </div>
             </div>
             <div id="chat-input-area">
-                <input type="text" id="chat-input" placeholder="<?php echo __('chat_placeholder'); ?>" onkeypress="if(event.key==='Enter')handleSend()">
-                <button onclick="handleSend()"><i class="fas fa-paper-plane"></i></button>
+                <div id="chat-image-preview">
+                    <img id="chat-preview-img" src="" alt="Preview">
+                    <button class="chat-preview-close" onclick="clearChatImage()">&times;</button>
+                </div>
+                <div class="chat-input-row">
+                    <label for="chat-image-input" class="chat-image-btn" title="Upload Image">
+                        <i class="fas fa-image"></i>
+                    </label>
+                    <input type="file" id="chat-image-input" accept="image/*" style="display: none;" onchange="previewChatImage(this)">
+                    <input type="text" id="chat-input" placeholder="<?php echo __('chat_placeholder'); ?>" onkeypress="if(event.key==='Enter')handleSend()">
+                    <button class="send-btn" onclick="handleSend()"><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/main.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/chatbox.js"></script>
+    <script src="<?php echo SITE_URL; ?>/assets/js/main.js?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo SITE_URL; ?>/assets/js/chatbox_v3.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
